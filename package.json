@@ -18,9 +18,17 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -p tsconfig.json && npm run copy-assets",
+    "copy-assets": "node scripts/copy-assets.js",
+    "start": "npm run build && electron .",
+    "dev": "tsc -p tsconfig.json -w"
   },
   "dependencies": {
     "electron": "^44.0.0"
+  },
+  "devDependencies": {
+    "@types/electron": "^1.4.38",
+    "@types/node": "^26.4.0",
+    "typescript": "^7.0.2"
   }
 }

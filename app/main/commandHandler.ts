@@ -27,7 +27,7 @@ function openApp(appKey: string): Promise<CommandResult> {
     const isWindows = platform() === "win32";
     const cmd = isWindows ? `start "" ${exeName}` : exeName; // dev fallback for non-Windows testing
 
-    exec(cmd, (error) => {
+    exec(cmd, (error:any) => {
       if (error) {
         resolve({ success: false, message: `Couldn't open ${appKey}: ${error.message}` });
       } else {
@@ -42,7 +42,7 @@ function openUrl(url: string): Promise<CommandResult> {
         const isWindows = platform() === "win32";
         const cmd = isWindows ? `start "" "${url}"` : `xdg-open "${url}"`;
 
-        exec(cmd, (error) => {
+        exec(cmd, (error:any) => {
             if (error) {
                 resolve({ success: false, message: `Couldn't open URL: ${error.message}` });
             } else {
@@ -60,6 +60,29 @@ function webSearch(query: string): Promise<CommandResult> {
     }));
 }
 
-export async function handleCommand(command: string): Promise<CommandResult> {
-    const input = rawInput
+export async function handleCommand(rawInput: string): Promise<CommandResult> {
+    const input = rawInput.trim().toLowerCase();
+
+    if(input.length === 0) {
+        return { success: false, message: "Say or type something first." }
+    }
+
+    if(input.startsWith("open ")) {
+        const target = input.slice("open ".length).trim();
+
+        if(target.startsWith("https://") || target.startsWith("http://")) {
+            return openUrl(target);
+        }
+
+        if(APP_ALIASES[target]){
+            return openApp(target);
+        }
+
+        return openApp(target);
+    }
+
+    return {
+        success: false,
+        message: `I don't understand "${rawInput}" yet. Try "open chrome" or "search cats".`,
+    };
 }

@@ -1,0 +1,172 @@
+/* Tokens from design.md — dark theme only for Phase 1.
+   Light theme / system-theme detection lands in a later hardening pass. */
+:root {
+  --bg-primary: #1f1f1f;
+  --bg-elevated: #2b2b2b;
+  --bg-user-bubble: #3a3a3a;
+  --accent: #5b8def;
+  --accent-hover: #7ba3f2;
+  --text-primary: #f2f2f2;
+  --text-secondary: #a0a0a0;
+  --success: #4caf7d;
+  --error: #e5484d;
+  --border-subtle: #3a3a3a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+
+body {
+  font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.popup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty-state {
+  margin: auto;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.bubble {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  line-height: 1.4;
+  animation: fade-in 150ms ease-out;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: var(--bg-user-bubble);
+  color: var(--text-primary);
+}
+
+.bubble.assistant {
+  align-self: flex-start;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.bubble.assistant.success {
+  border-left: 3px solid var(--success);
+}
+
+.bubble.assistant.error {
+  border-left: 3px solid var(--error);
+}
+
+.bubble .timestamp {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.text-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.text-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.mic-button,
+.send-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.mic-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mic-button:not(:disabled):hover,
+.send-button:hover {
+  color: var(--accent);
+  background: rgba(91, 141, 239, 0.12);
+}
+
+.mic-button.listening {
+  color: var(--accent);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(91, 141, 239, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(91, 141, 239, 0); }
+}
+
+.send-button {
+  color: var(--accent);
+}
+
+.processing {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 12px;
+  align-self: flex-start;
+  padding: 4px 12px;
+}
