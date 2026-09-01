@@ -1,19 +1,21 @@
 # Ve — Product Document
 
 ## 1. Vision
-Ve is a Jarvis-style personal assistant for Windows desktops/laptops. It lives in the system tray beside the wifi/battery icons — not as a taskbar app — and opens a small chat-style popup on click. Users type or speak instructions, and Ve executes real actions on the machine: opening apps, searching and opening content on websites, sending messages through web interfaces, and more, using learned preferences (e.g. default browser) to act smartly without over-asking.
+Ve is a personal desktop assistant for Windows that executes real actions from typed or spoken requests — opening apps, finding and opening content on websites, sending messages, and more. It lives in the system tray beside the wifi/battery icons, not as a taskbar app, and opens a small chat-style popup on click.
 
-A secondary, non-core feature is a proactive startup suggestion: on boot, Ve may predict and suggest what the user likely wants to do next, based on learned routine.
+**The core differentiator is federated learning.** Most assistants that "learn you" do it by sending behavioral data to a server. Ve is built to learn a user's routines and preferences (app usage patterns, common requests, timing) entirely on-device, and improve over time by sharing only encrypted/aggregated model updates — never raw personal data — across users. The action-execution layer (tray, chat, skills) is the interface; the FL-based learning layer is the actual point of the project.
+
+A proactive startup suggestion (predicting what the user wants on boot) is the first user-visible feature built on top of this learning layer, but the learning system itself — local training + federated aggregation — is the long-term goal, not a nice-to-have.
 
 ## 2. Problem Statement
-Existing voice assistants (Siri, Google Assistant, Cortana) are either mobile-first, cloud-locked, or discontinued on Windows. There is no lightweight, privacy-respecting, action-executing assistant that lives natively in the Windows tray and can be extended with new skills over time.
+Existing voice assistants (Siri, Google Assistant, Cortana) are either mobile-first, cloud-locked, or discontinued on Windows. Assistants that do personalize typically do so by centralizing user data on a server. There's no lightweight, action-executing Windows assistant that learns and personalizes through on-device training and federated learning instead of centralized data collection.
 
 ## 3. Target User
 - Primary: the builder (Ved), power users comfortable with technical tools who want a fast, low-friction way to trigger multi-step actions without opening apps manually.
 - Not targeting: non-technical mass-market users in v1. No enterprise/compliance requirements in v1.
 
 ## 4. Core Principles
-- **Privacy-first**: raw logs and actions stay on-device by default. Cloud calls (LLM API) are opt-in/explicit, not silent.
+- **On-device learning, federated improvement**: raw behavioral data (app usage, command history) never leaves the device. The model learns locally; only encrypted/aggregated updates are ever shared, and only once federated learning is implemented (v3+) — never raw logs.
 - **Low friction**: every interaction should be fewer clicks/keystrokes than doing the task manually — otherwise the feature has failed its purpose.
 - **Ambient, not intrusive**: Ve should feel like system infrastructure (tray icon), not another app window competing for attention.
 - **Fail visibly, not silently**: if Ve can't complete an action, it says so and offers an alternative — it never pretends to succeed.
@@ -35,16 +37,20 @@ Existing voice assistants (Siri, Google Assistant, Cortana) are either mobile-fi
 - Persistent local storage of preferences and command history (SQLite)
 
 ### 5.3 V3 — nice to have
-- Predictive startup suggestion popup (learns time/day/app-sequence patterns, suggests 1-click actions on boot)
+- Local prediction: learns time/day/app-sequence patterns on-device, powers the startup suggestion popup
 - Native app automation for specific high-value apps (e.g. WhatsApp Desktop) via Windows UI Automation, OR browser-based automation of WhatsApp Web as the more stable alternative
 - Skill plugin system so new capabilities can be added without touching core app
 - Local LLM option (Ollama + small model) as a fully offline alternative to cloud API
 
-### 5.4 Explicitly out of scope (for now)
+### 5.4 V4 — core long-term goal
+- **Federated learning**: local models train on-device, then share only encrypted/aggregated model updates (never raw logs) to a central aggregator, which redistributes an improved global model back to all users
+- Cross-user pattern generalization without any single user's raw data ever leaving their machine
+- This is the feature the project exists to prove out — everything before it (tray shell, skills, local prediction) is the substrate FL needs to run on top of
+
+### 5.5 Explicitly out of scope (for now)
 - Fully general "control any app" agentic reasoning — unsolved problem, not an MVP goal
 - Mobile app / cross-device sync
 - Multi-user / enterprise features
-- Federated learning across devices
 
 ## 6. Success Criteria (MVP)
 - Ve can open at least 5 different categories of things (apps, URLs, web search, and 2 more) correctly >90% of the time on the builder's own machine

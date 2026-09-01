@@ -1,0 +1,26 @@
+{
+  "name": "ve",
+  "version": "1.0.0",
+  "description": "**An assistant that learns you — without learning on you.**",
+  "homepage": "https://github.com/vednarvekar/Ve#readme",
+  "bugs": {
+    "url": "https://github.com/vednarvekar/Ve/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vednarvekar/Ve.git"
+  },
+  "license": "MIT",
+  "author": "Ved Narvekar",
+  "type": "module",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "electron": "^44.0.0"
+  }
+}

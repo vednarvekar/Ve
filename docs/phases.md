@@ -2,7 +2,7 @@
 
 ## Phase 0: Foundation & Naming
 - Lock the product name (or proceed with placeholder and rename later)
-- Confirm tech stack choice: WinUI 3/WPF vs Tauri
+- Stack confirmed: Electron + TypeScript/React, full JS/TS end to end (see architecture.md)
 - Set up repo structure per architecture.md
 
 ## Phase 1: Tray Shell (UI loop, zero intelligence)
@@ -39,21 +39,28 @@
 - Benchmark accuracy/latency tradeoff vs cloud version
 - **Goal**: privacy-first version becomes viable for actual daily use, not just prototype
 
-## Phase 7: Predictive Startup Feature
+## Phase 7: Predictive Startup Feature (local-only, foundation for FL)
 - Build the data logger (app launches, timestamps, previous app) into SQLite
 - Collect 3–5 days of real usage logs
 - Train a lightweight model (Markov chain / GBDT) locally, export to ONNX
 - Load model into the agent, trigger high-confidence-only startup suggestions
-- **Goal**: this is the original "predictive popup" idea, now correctly scoped as one feature among many, not the whole product
+- **Goal**: prove the local learning loop works end-to-end on a single device — this is the required foundation before federated learning means anything
 
-## Phase 8: Hardening
+## Phase 8: Federated Learning (core long-term goal)
+- Define what gets shared: encrypted/aggregated model updates only — never raw logs or behavioral data
+- Build the local training step so it can run repeatedly on-device (not just once) as new data accumulates
+- Stand up a minimal central aggregator to collect model updates from multiple devices/users and produce an improved global model
+- Distribute the aggregated model back to devices; local models start from it instead of from scratch
+- Validate that the aggregated model actually improves prediction quality vs. single-device-only training, without any raw data ever leaving a device
+- **Goal**: this is the feature the project exists to prove out — everything in Phases 0–7 is the substrate FL needs
+
+## Phase 9: Hardening
 - Error handling and fallback messaging for every skill (never fail silently)
 - Permission prompts where relevant (e.g. first-time browser automation on a site)
-- Review privacy/data rules compliance across all features
-- Basic settings UI (preferences, LLM provider toggle, prediction feature on/off)
+- Review privacy/data rules compliance across all features, especially the FL update-sharing pipeline
+- Basic settings UI (preferences, LLM provider toggle, prediction/FL participation on/off)
 
 ## Explicitly Deferred (not a phase yet — revisit only if MVP+v2+v3 succeed)
 - Native app automation (e.g. WhatsApp Desktop via UIA) — fragile, high maintenance, evaluate cost/benefit before starting
-- Federated learning across devices
 - Any packaging/distribution beyond personal use
 - Skill plugin marketplace / third-party skill authoring
