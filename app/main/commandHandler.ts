@@ -1,4 +1,4 @@
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import { platform } from "os";
 
 export interface CommandResult {
@@ -6,33 +6,38 @@ export interface CommandResult {
     message: string;
 }
 
-const APP_ALIASES: Record<string, string> = {
-    chrome: "chrome",
-    notepad: "notepad",
-    calculator: "calc",
-    explorer: "explorer",
-    "file explorer": "explorer",
-    vscode: "code",
-    "vs code": "code",
-}
+const APP_ALIASES: Record<string, { win: string; linux: string }> = {
+  chrome:          { win: "chrome.exe",   linux: "google-chrome" },
+  notepad:         { win: "notepad.exe",  linux: "gedit" },
+  calculator:      { win: "calc.exe",     linux: "gnome-calculator" },
+  calc:            { win: "calc.exe",     linux: "gnome-calculator" },
+  explorer:        { win: "explorer.exe", linux: "xdg-open" },
+  "file explorer": { win: "explorer.exe", linux: "xdg-open" },
+  vscode:          { win: "code",         linux: "code" },
+  "vs code":       { win: "code",         linux: "code" },
+};
 
 function openApp(appKey: string): Promise<CommandResult> {
-  const exeName = APP_ALIASES[appKey];
+  const appName = APP_ALIASES[appKey];
+
   return new Promise((resolve) => {
-    if (!exeName) {
+    if (!appName) {
       resolve({ success: false, message: `I don't know how to open "${appKey}" yet.` });
       return;
     }
 
-    const isWindows = platform() === "win32";
-    const cmd = isWindows ? `start "" ${exeName}` : exeName; // dev fallback for non-Windows testing
+    const isWsl = Boolean(process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP);
+    const isWindows = platform() === "win32" || isWsl;
+    const exeName = isWindows ? appName.win : appName.linux;
+    const args = !isWindows && (appKey === "explorer" || appKey === "file explorer") ? ["."] : [];
+    const child = spawn(exeName, args, { detached: true, stdio: "ignore" });
 
-    exec(cmd, (error:any) => {
-      if (error) {
-        resolve({ success: false, message: `Couldn't open ${appKey}: ${error.message}` });
-      } else {
-        resolve({ success: true, message: `Opened ${appKey}.` });
-      }
+    child.once("error", (error) => {
+      resolve({ success: false, message: `Couldn't open ${appKey}: ${error.message}` });
+    });
+    child.once("spawn", () => {
+      child.unref();
+      resolve({ success: true, message: `Opened ${appKey}.` });
     });
   });
 }
