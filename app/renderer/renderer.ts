@@ -8,16 +8,28 @@
  */
 
 const messagesEl = document.getElementById("messages") as HTMLDivElement;
-const emptyStateEl = document.getElementById("emptyState") as HTMLDivElement;
 const formEl = document.getElementById("inputForm") as HTMLFormElement;
 const inputEl = document.getElementById("textInput") as HTMLInputElement;
+
+interface CommandResult {
+  success: boolean;
+  message: string;
+}
+
+interface VeWindow extends Window {
+  ve: {
+    runCommand(input: string): Promise<CommandResult>;
+  };
+}
+
+const veWindow = window as unknown as VeWindow;
 
 function timestamp(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function appendBubble(text: string, kind: "user" | "assistant", status?: "success" | "error"): void {
-  emptyStateEl.style.display = "none";
+  messagesEl.hidden = false;
 
   const bubble = document.createElement("div");
   bubble.className = `bubble ${kind}${status ? ` ${status}` : ""}`;
@@ -31,11 +43,15 @@ function appendBubble(text: string, kind: "user" | "assistant", status?: "succes
   time.textContent = timestamp();
   bubble.appendChild(time);
 
-  messagesEl.appendChild(bubble);
-  messagesEl.scrollTop = messagesEl.scrollHeight;
+  if (messagesEl) {
+    messagesEl.appendChild(bubble);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 }
 
 function showProcessing(): HTMLDivElement {
+  messagesEl.hidden = false;
+
   const el = document.createElement("div");
   el.className = "processing";
   el.textContent = "Working on it…";
@@ -56,7 +72,7 @@ formEl.addEventListener("submit", async (e) => {
   const processingEl = showProcessing();
 
   try {
-    const result = await window.ve.runCommand(text);
+    const result = await veWindow.ve.runCommand(text);
     processingEl.remove();
     appendBubble(result.message, "assistant", result.success ? "success" : "error");
   } catch (err) {

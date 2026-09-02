@@ -1,8 +1,10 @@
 import {Tray, app, Menu, nativeImage} from 'electron';
-import { togglePopup, createPopupWindow } from './popupWindow';
+import { togglePopup, createPopupWindow } from './popupWindow.js';
 import * as path from "path";
+import { fileURLToPath } from "url";
 
 let tray: Tray | null = null;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export function createTray() {
     const iconPath = path.join(__dirname, "../assets/tray-icon.png");

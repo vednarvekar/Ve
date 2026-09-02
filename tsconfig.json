@@ -5,6 +5,8 @@
     "moduleResolution": "nodenext",
     "target": "esnext",
     "lib": ["esnext", "dom", "dom.iterable"],
+    "rootDir": "app",
+    "outDir": "dist",
 
     // Other Outputs
     "sourceMap": true,

@@ -1,23 +1,21 @@
 import { BrowserWindow, screen, Tray } from 'electron';
 import * as path from "path";
+import { fileURLToPath } from "url";
 
-const WINDOW_WIDTH = 400;
+const WINDOW_WIDTH = 500;
 const WINDOW_HEIGHT = 600;
 
 let popup: BrowserWindow | null = null;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 
-// Positions the popup near the system tray.
+// Keep the popup in the lower-right corner of the active display.
 function computePosition(tray: Tray): { x: number; y: number } {
   const trayBounds = tray.getBounds();
   const display = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y });
   const workArea = display.workArea;
 
-  // Anchor bottom-right of the work area, just above the taskbar,
-  const x = Math.min(
-    Math.max(trayBounds.x - WINDOW_WIDTH / 2, workArea.x),
-    workArea.x + workArea.width - WINDOW_WIDTH
-  );
+  const x = workArea.x + workArea.width - WINDOW_WIDTH - 8;
   const y = workArea.y + workArea.height - WINDOW_HEIGHT - 8;
 
   return { x: Math.round(x), y: Math.round(y) };
@@ -33,6 +31,7 @@ export function createPopupWindow(tray: Tray): BrowserWindow {
         y,
         show: false,
         frame: false,
+        type: "panel",
         resizable: false,
         fullscreenable: false,
         skipTaskbar: true,
@@ -45,13 +44,9 @@ export function createPopupWindow(tray: Tray): BrowserWindow {
         },
     });
 
-    popup.loadFile(path.join(__dirname, "../renderer/index.html"));
+    popup.setSkipTaskbar(true);
 
-    // Close (hide, don't destroy) when it loses focus — flyout behavior,
-    // not a persistent window the user has to manually close.
-    popup.on("blur", () => {
-        popup?.hide();
-    });
+    popup.loadFile(path.join(__dirname, "../renderer/index.html"));
 
     return popup;
 }

@@ -4,13 +4,11 @@
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';" />
   <title>Ve</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="popup">
-    <div class="messages" id="messages">
-      <div class="empty-state" id="emptyState">Type or speak a command</div>
-    </div>
+    <div class="messages" id="messages" hidden></div>
 
     <form class="input-bar" id="inputForm">
       <button type="button" class="mic-button" id="micButton" title="Voice input (coming in Phase 4)" disabled>
@@ -37,6 +35,6 @@
     </form>
   </div>
 
-  <script src="renderer.js"></script>
+  <script type="module" src="renderer.js"></script>
 </body>
 </html>

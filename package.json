@@ -13,22 +13,22 @@
   "license": "MIT",
   "author": "Ved Narvekar",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/main/index.js",
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && npm run copy-assets",
-    "copy-assets": "node scripts/copy-assets.js",
-    "start": "npm run build && electron .",
-    "dev": "tsc -p tsconfig.json -w"
+    "build": "node --no-warnings scripts/build.js",
+    "start": "npm run build && electron ."
   },
   "dependencies": {
-    "electron": "^44.0.0"
+    "electron": "^41.0.2"
   },
   "devDependencies": {
-    "@types/electron": "^1.4.38",
-    "@types/node": "^26.4.0",
-    "typescript": "^7.0.2"
+    "@types/node": "^22.15.3",
+    "typescript": "^5.9.3"
+  },
+  "allowScripts": {
+    "electron@41.0.2": true
   }
 }
