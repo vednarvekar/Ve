@@ -40,7 +40,7 @@ Existing voice assistants (Siri, Google Assistant, Cortana) are either mobile-fi
 - Local prediction: learns time/day/app-sequence patterns on-device, powers the startup suggestion popup
 - Native app automation for specific high-value apps (e.g. WhatsApp Desktop) via Windows UI Automation, OR browser-based automation of WhatsApp Web as the more stable alternative
 - Skill plugin system so new capabilities can be added without touching core app
-- Local LLM option (Ollama + small model) as a fully offline alternative to cloud API
+- Multi-provider support: user configures their own API key (Anthropic, Gemini, or OpenAI); intent parsing always uses the cheapest model available, complex tasks use a smarter model only when needed
 
 ### 5.4 V4 — core long-term goal
 - **Federated learning**: local models train on-device, then share only encrypted/aggregated model updates (never raw logs) to a central aggregator, which redistributes an improved global model back to all users

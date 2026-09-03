@@ -10,6 +10,9 @@ app.dock?.hide();
 app.whenReady().then(() => {
   const tray = createTray();
   togglePopup(tray);
+}).catch((error) => {
+  console.error("Ve failed during startup:", error);
+  app.quit();
 });
 
 app.on("window-all-closed", () => {
@@ -21,5 +24,9 @@ app.on("window-all-closed", () => {
 // IPC bridge: renderer sends a raw command string, main process runs it
 // through the (currently hardcoded) command handler and returns the result.
 ipcMain.handle("ve:run-command", async (_event, input: string) => {
-  return handleCommand(input);
+ try {
+    return await handleCommand(input);
+  } catch (err: any) {
+    return { success: false, message: err.message || "Execution error occurred." };
+  }
 });

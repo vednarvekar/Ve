@@ -1,5 +1,5 @@
-/* Tokens from design.md — dark theme only for Phase 1.
-   Light theme / system-theme detection lands in a later hardening pass. */
+/* Tokens from design.md — dark theme only for now.
+   Light theme / system-theme detection is a later hardening pass. */
 :root {
   --bg-primary: #1f1f1f;
   --bg-elevated: #2b2b2b;
@@ -19,12 +19,9 @@
   padding: 0;
 }
 
-html, body {
-  width: 100vw;
+html, body, #root {
+  width: 100%;
   height: 100%;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
   background: transparent;
   overflow: hidden;
 }
@@ -47,11 +44,32 @@ body {
   overflow: hidden;
 }
 
+/*
+ * THE FIX for Phase 1's overlapping/disappearing input bar:
+ * a flex child with `flex: 1` and `overflow-y: auto` will still grow
+ * past its container and push/overlap siblings unless it's also given
+ * `min-height: 0`. Flex items default to `min-height: auto`, which
+ * means "don't shrink below your content size" — with a long chat
+ * history that content size can exceed the popup's height, so the
+ * input bar below it gets shoved off-screen or overlapped. Setting
+ * min-height: 0 here lets this element actually respect flex:1 and
+ * scroll internally instead of expanding the whole column.
+ */
 .messages {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty-state {
+  margin: auto;
+  color: var(--text-secondary);
+  font-size: 15px;
+  text-align: center;
 }
 
 .bubble {
@@ -87,7 +105,7 @@ body {
 .bubble .timestamp {
   display: block;
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 15px;
   color: var(--text-secondary);
 }
 
@@ -97,7 +115,11 @@ body {
 }
 
 .input-bar {
-  flex: 0 0 auto;
+  /* flex-shrink: 0 is the other half of the fix — without it, a long
+     message list could still squeeze the input bar's height down as
+     it competes for space, instead of the input bar staying fixed and
+     the messages list being the only thing that scrolls/shrinks. */
+  flex-shrink: 0;
   position: relative;
   z-index: 1;
   display: flex;
@@ -110,7 +132,8 @@ body {
 
 .text-input {
   flex: 1;
-  min-width: 0;
+  min-width: 0; /* same class of bug, horizontal axis: lets the input
+                   shrink instead of overflowing the input bar */
   background: transparent;
   border: none;
   outline: none;
@@ -123,8 +146,13 @@ body {
   color: var(--text-secondary);
 }
 
+.text-input:disabled {
+  opacity: 0.6;
+}
+
 .mic-button,
 .send-button {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,25 +165,16 @@ body {
   cursor: pointer;
 }
 
-.mic-button:disabled {
+.mic-button:disabled,
+.send-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
 .mic-button:not(:disabled):hover,
-.send-button:hover {
+.send-button:not(:disabled):hover {
   color: var(--accent);
   background: rgba(91, 141, 239, 0.12);
-}
-
-.mic-button.listening {
-  color: var(--accent);
-  animation: pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(91, 141, 239, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(91, 141, 239, 0); }
 }
 
 .send-button {
@@ -165,7 +184,7 @@ body {
 .processing {
   color: var(--text-secondary);
   font-style: italic;
-  font-size: 12px;
+  font-size: 15px;
   align-self: flex-start;
   padding: 4px 12px;
 }

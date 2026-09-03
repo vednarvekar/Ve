@@ -2,7 +2,7 @@ import { BrowserWindow, screen, Tray } from 'electron';
 import * as path from "path";
 import { fileURLToPath } from "url";
 
-const WINDOW_WIDTH = 500;
+const WINDOW_WIDTH = 550;
 const WINDOW_HEIGHT = 600;
 
 let popup: BrowserWindow | null = null;
@@ -29,16 +29,17 @@ export function createPopupWindow(tray: Tray): BrowserWindow {
         width: WINDOW_WIDTH,
         x,
         y,
+        icon: path.join(__dirname, "../assets/tray-icon.png"),
         show: false,
         frame: false,
         type: "panel",
         resizable: false,
         fullscreenable: false,
-        skipTaskbar: true,
+        skipTaskbar: false,
         alwaysOnTop: true,
         transparent: true,
         webPreferences:{
-            preload: path.join(__dirname, "../preload/preload.js"),
+            preload: path.join(__dirname, "../preload/preload.cjs"),
             contextIsolation: true,
             nodeIntegration: false,
         },

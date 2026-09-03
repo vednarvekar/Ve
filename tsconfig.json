@@ -25,5 +25,15 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  }
+  },
+  "include": [
+    "app/main/**/*.ts",
+    "app/preload/**/*.ts",
+    "app/preload/**/*.cts",
+    "app/core/**/*.ts",
+    "app/skills/**/*.ts",
+    "app/renderer/**/*.ts",
+    "app/renderer/**/*.tsx",
+    "app/renderer/**/*.d.ts"
+  ]
 }

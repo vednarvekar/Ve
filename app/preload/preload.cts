@@ -1,6 +1,6 @@
-import { contextBridge, ipcRenderer } from "electron";
+const { contextBridge, ipcRenderer } = require("electron");
 
-export interface CommandResult {
+interface CommandResult {
   success: boolean;
   message: string;
 }

@@ -34,10 +34,11 @@
 - Expand skill set based on actual daily usage patterns
 - **Goal**: Ve becomes genuinely useful for real daily tasks, not just demos
 
-## Phase 6: Local/Private Release Swap
-- Swap cloud LLM intent parsing for a local model via Ollama (Phi-3-mini or Llama-3.2-3B)
-- Benchmark accuracy/latency tradeoff vs cloud version
-- **Goal**: privacy-first version becomes viable for actual daily use, not just prototype
+## Phase 6: Multi-Provider Support + Two-Tier Model Strategy
+- Make the LLM provider configurable — user picks Anthropic, Gemini, or OpenAI in settings, supplies their own API key (not Ve's)
+- Intent parsing always uses the cheapest/fastest model in that provider's lineup (Haiku, Gemini Flash, GPT-4o mini) — this must work on any normal device with no GPU
+- Add a "power skill" concept: tasks that need real reasoning ("make a todo app in VS Code", "write me a script that...") route to a mid-tier model (Sonnet-class) as a separate, explicit call — not the intent parser
+- **Goal**: Ve works affordably for any user regardless of device specs — no Ollama, no local models, no GPU requirement. The intent parser is cheap; the power skill is only triggered when the task genuinely needs it.
 
 ## Phase 7: Predictive Startup Feature (local-only, foundation for FL)
 - Build the data logger (app launches, timestamps, previous app) into SQLite
