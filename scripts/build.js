@@ -33,4 +33,5 @@ execFileSync(process.execPath, [
   "--config",
   "app/renderer/vite.config.ts",
 ], { stdio: "inherit" });
+
 await copyAssets(join(sourceRoot, "assets"), join(outputRoot, "assets"));

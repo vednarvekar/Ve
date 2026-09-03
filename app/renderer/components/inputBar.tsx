@@ -21,15 +21,15 @@ export function InputBar({
 
   return (
     <form
-      className="fixed inset-x-0 bottom-0 z-50 flex min-h-14 items-center gap-2 border-t border-ve-border-subtle bg-ve-bg-elevated px-3 py-2"
+      className="fixed inset-x-0 bottom-0 z-50 flex min-h-14 items-center gap-2 border-t border-ve-border-subtle bg-ve-bg-elevated px-3 py-2.5 backdrop-blur-sm"
       onSubmit={handleSubmit}
     >
       <MicButton />
       <input
         type="text"
-        className="min-w-0 flex-1 rounded-md border border-ve-accent bg-ve-bg-primary px-2.5 py-1.5 text-sm text-ve-text-primary outline-none placeholder:text-ve-text-secondary disabled:opacity-60"
+        className="min-w-0 flex-1 rounded-md border border-ve-accent bg-ve-bg-primary px-3 py-1 text-[17px] font-mono font-medium text-ve-text-primary outline-none placeholder:italic placeholder:text-ve-text-secondary focus:border-ve-accent focus:ring-1 focus:ring-ve-accent disabled:opacity-60"
         placeholder="Ask Ve to do something…"
-        autoComplete="off"
+        autoComplete="on"
         autoFocus
         value={value}
         disabled={disabled}

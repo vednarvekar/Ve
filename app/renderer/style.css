@@ -10,7 +10,7 @@
   --color-ve-success: #4caf7d;
   --color-ve-error: #e5484d;
   --color-ve-border-subtle: #3a3a3a;
-  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Monospace", "Helvetica Neue", Arial, sans-serif;
   --animate-fade-in: fade-in 150ms ease-out;
 
   @keyframes fade-in {
@@ -27,7 +27,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #1f1f1f;
+    background: #121111;
   }
 
   body {

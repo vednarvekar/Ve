@@ -19,12 +19,24 @@ export function ChatView({
   return (
     <div className="h-full overflow-y-auto p-3 pb-16">
       {empty ? (
-        // The empty state is intentionally hidden. The composer is the first
-        // visible control when the popup opens.
-        null
+        <div className="flex h-full max-w-full flex-col items-center justify-center gap-1">
+          <div className="max-w-full overflow-x-auto px-3 py-1 text-center font-mono text-[9px] leading-[0.95] tracking-[-0.08em] text-ve-text-primary">
+            <pre className="inline-block whitespace-pre text-left">
+{`██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗    ████████╗ ██████╗     ██╗   ██╗███████╗
+██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝    ╚══██╔══╝██╔═══██╗    ██║   ██║██╔════╝
+██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗         ██║   ██║   ██║    ██║   ██║█████╗
+██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝         ██║   ██║   ██║    ╚██╗ ██╔╝██╔══╝
+╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗       ██║   ╚██████╔╝     ╚████╔╝ ███████╗
+ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝       ╚═╝    ╚═════╝       ╚═══╝  ╚══════╝`}
+            </pre>
+          </div>
+          <div className="self-start px-3 py-1 text-[15px] italic text-ve-text-secondary">
+            Say or type something to get started.
+          </div>
+        </div>
       ) : (
         <>
-          <div className="flex flex-col gap-2">
+          <div className="flex w-full flex-col items-start gap-2">
             {messages.map((m) => (
               <MessageBubble key={m.id} message={m} />
             ))}

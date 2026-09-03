@@ -2,7 +2,7 @@ export function MicButton() {
   return (
     <button
       type="button"
-      className="flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-transparent text-ve-text-secondary opacity-45"
+      className="flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-ve-bg-primary/80 text-ve-text-primary opacity-80 ring-1 ring-inset ring-ve-border-subtle"
       title="Voice input (coming in Phase 4)"
       disabled
     >
