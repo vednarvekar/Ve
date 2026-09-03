@@ -22,5 +22,5 @@ function validate(raw: RawParsedIntent): ParsedIntent | null {
         return { type: "unknown" }
     }
 
-    return {  }
+    return null;
 } 
