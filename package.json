@@ -40,6 +40,6 @@
     "vite": "^8.2.2"
   },
   "allowScripts": {
-    "electron@41.0.2": true
+    "electron@41.10.7": true
   }
 }
