@@ -1,7 +1,7 @@
 import { app, ipcMain } from "electron";
 import { createTray } from "./tray.js";
 import { togglePopup } from "./popupWindow.js";
-import { handleCommand } from "./commandHandler.js";
+import { handleCommand } from "../core/intentParser/commandFallback.js";
 
 // Keep the app running with no windows/dock presence — this is tray-only,
 // there is no "main window" and the app must never quit when a popup closes.
