@@ -4,7 +4,7 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "esnext",
-    "lib": ["esnext", "dom", "dom.iterable"],
+    "lib": ["esnext"],
     "rootDir": "app",
     "outDir": "dist",
 
@@ -29,11 +29,6 @@
   "include": [
     "app/main/**/*.ts",
     "app/preload/**/*.ts",
-    "app/preload/**/*.cts",
-    "app/core/**/*.ts",
-    "app/skills/**/*.ts",
-    "app/renderer/**/*.ts",
-    "app/renderer/**/*.tsx",
-    "app/renderer/**/*.d.ts"
+    "app/preload/**/*.cts"
   ]
 }

@@ -1,6 +1,6 @@
 import { cp, mkdir, readdir, rm, stat } from "fs/promises";
 import { execFileSync } from "node:child_process";
-import { dirname, extname, join } from "path";
+import { dirname, join } from "path";
 
 const sourceRoot = "app";
 const outputRoot = "dist";
@@ -22,6 +22,9 @@ async function copyAssets(sourcePath, destinationPath) {
 
 await rm(outputRoot, { recursive: true, force: true });
 execFileSync(process.execPath, ["node_modules/typescript/bin/tsc", "-p", "tsconfig.json"], {
+  stdio: "inherit",
+});
+execFileSync(process.execPath, ["node_modules/typescript/bin/tsc", "-p", "tsconfig.renderer.json"], {
   stdio: "inherit",
 });
 execFileSync(process.execPath, [

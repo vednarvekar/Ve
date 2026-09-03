@@ -1,4 +1,5 @@
-import { exec, spawn } from "child_process";
+import { spawn } from "child_process";
+import { shell } from "electron";
 import { platform } from "os";
 
 export interface CommandResult {
@@ -42,19 +43,19 @@ function openApp(appKey: string): Promise<CommandResult> {
   });
 }
 
-function openUrl(url: string): Promise<CommandResult> {
-    return new Promise((resolve) => {
-        const isWindows = platform() === "win32";
-        const cmd = isWindows ? `start "" "${url}"` : `xdg-open "${url}"`;
+async function openUrl(url: string): Promise<CommandResult> {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return { success: false, message: "Only HTTP and HTTPS URLs can be opened." };
+    }
 
-        exec(cmd, (error:any) => {
-            if (error) {
-                resolve({ success: false, message: `Couldn't open URL: ${error.message}` });
-            } else {
-                resolve({ success: true, message: `Opened URL: ${url}` });
-            }
-        });
-    })
+    await shell.openExternal(parsedUrl.toString());
+    return { success: true, message: `Opened URL: ${url}` };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid URL.";
+    return { success: false, message: `Couldn't open URL: ${message}` };
+  }
 }
 
 function webSearch(query: string): Promise<CommandResult> {
@@ -79,11 +80,11 @@ export async function handleCommand(rawInput: string): Promise<CommandResult> {
             return openUrl(target);
         }
 
-        if(APP_ALIASES[target]){
-            return openApp(target);
-        }
-
         return openApp(target);
+    }
+
+    if (input.startsWith("search ")) {
+        return webSearch(input.slice("search ".length).trim());
     }
 
     return {

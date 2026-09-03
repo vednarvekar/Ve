@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { MicButton } from "./micButton.js";
 
 export function InputBar({
@@ -9,31 +9,38 @@ export function InputBar({
   disabled: boolean;
 }) {
   const [value, setValue] = useState("");
+  const canSend = Boolean(value.trim()) && !disabled;
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!value.trim() || disabled) return;
-    onSend(value);
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const text = value.trim();
+    if (!text || disabled) return;
+    onSend(text);
     setValue("");
   }
 
   return (
-    <form className="input-bar" onSubmit={handleSubmit}>
+    <form
+      className="fixed inset-x-0 bottom-0 z-50 flex min-h-14 items-center gap-2 border-t border-ve-border-subtle bg-ve-bg-elevated px-3 py-2"
+      onSubmit={handleSubmit}
+    >
       <MicButton />
       <input
         type="text"
-        className="text-input"
+        className="min-w-0 flex-1 rounded-md border border-ve-accent bg-ve-bg-primary px-2.5 py-1.5 text-sm text-ve-text-primary outline-none placeholder:text-ve-text-secondary disabled:opacity-60"
         placeholder="Ask Ve to do something…"
         autoComplete="off"
         autoFocus
         value={value}
         disabled={disabled}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(event) => setValue(event.target.value)}
       />
-      <button type="submit" className="send-button" title="Send" disabled={disabled}>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M2 21l21-9L2 3v7l15 2-15 2z" />
-        </svg>
+      <button
+        type="submit"
+        className="inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-ve-accent px-3 text-[13px] font-semibold text-white enabled:hover:bg-[#7ba3f2] disabled:cursor-not-allowed disabled:opacity-45"
+        disabled={!canSend}
+      >
+        Send
       </button>
     </form>
   );

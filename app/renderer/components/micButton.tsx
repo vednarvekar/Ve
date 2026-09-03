@@ -1,10 +1,8 @@
-import React from "react";
-
 export function MicButton() {
   return (
     <button
       type="button"
-      className="mic-button"
+      className="flex size-8 shrink-0 cursor-not-allowed items-center justify-center rounded-md bg-transparent text-ve-text-secondary opacity-45"
       title="Voice input (coming in Phase 4)"
       disabled
     >

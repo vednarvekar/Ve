@@ -18,7 +18,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "node --no-warnings scripts/build.js scripts/copy-assets.js",
+    "build": "node --no-warnings scripts/build.js",
     "start": "npm run build && electron ."
   },
   "dependencies": {
@@ -26,11 +26,13 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.15.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "^41.0.2",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.2.2"
   },
