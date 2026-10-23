@@ -9,7 +9,7 @@
 export interface LoRAConfig {
   rank: number;       // r = 4
   alpha: number;      // alpha = 8
-  inFeatures: number; // hiddenDim = 256
+  inFeatures: number; // MiniLM hiddenDim = 384
   outFeatures: number;// numIntents = 5
 }
 
@@ -38,7 +38,7 @@ export class LoRAAdapterHead {
     this.config = {
       rank: config.rank ?? 4,
       alpha: config.alpha ?? 8,
-      inFeatures: config.inFeatures ?? 256,
+      inFeatures: config.inFeatures ?? 384,
       outFeatures: config.outFeatures ?? 5,
     };
 

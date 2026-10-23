@@ -23,6 +23,7 @@
     "test": "npm run build && node tests/prediction.test.mjs && node tests/skills.test.mjs && node tests/storage.test.mjs && node tests/slm.test.mjs"
   },
   "dependencies": {
+    "onnxruntime-node": "^1.30.0",
     "openai": "^7.9.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

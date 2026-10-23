@@ -35,3 +35,4 @@ execFileSync(process.execPath, [
 ], { stdio: "inherit" });
 
 await copyAssets(join(sourceRoot, "assets"), join(outputRoot, "assets"));
+await copyAssets(join(sourceRoot, "core/slm/assets"), join(outputRoot, "core/slm/assets"));

@@ -1,6 +1,6 @@
 import type { ParsedIntent } from "../schema/commandSchema.js";
 import { hardcodedCommands } from "./commandFallback.js";
-import { defaultSLMIntentParser } from "../slm/slmIntentParser.js";
+import { defaultSLMParser } from "../slm/slmIntentParser.js";
 
 /**
  * Dual-Path Intent Parser:
@@ -21,7 +21,7 @@ export async function parsedResponse(rawInput: string): Promise<ParsedIntent> {
 
   // Path 2: On-device SLM inference & personalization engine
   try {
-    const slmAst = await defaultSLMIntentParser.parse(trimmed);
+    const slmAst = await defaultSLMParser.parse(trimmed);
 
     if (slmAst.confidence >= 0.5 && slmAst.command) {
       return { type: "command", command: slmAst.command };

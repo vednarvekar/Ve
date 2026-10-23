@@ -1,21 +1,18 @@
-/**
- * High-Level On-Device SLM Intent Parser & Personalization Brain
- *
- * Coordinates tokenization, compact INT8 transformer inference, LoRA adaptation,
- * and slot extraction to produce structured Command ASTs matching Ve skills.
- */
-
 import { randomUUID } from "node:crypto";
-import type { Command, SkillName } from "../schema/commandSchema.js";
-import { FastTokenizer, defaultTokenizer } from "./tokenizer.js";
-import {
-  type IntentName,
-  type SLMConfig,
-  INTENT_LABELS,
-  createDefaultModelWeights,
-} from "./modelWeights.js";
-import { SLMInferenceSession } from "./inferenceSession.js";
+import type { Command } from "../schema/commandSchema.js";
+import { WordPieceTokenizer, defaultTokenizer } from "./tokenizer.js";
+import { OnnxInferenceEngine, defaultInferenceEngine } from "./inferenceSession.js";
 import { LoRAAdapterHead } from "./adapterHead.js";
+
+export const INTENT_LABELS = [
+  "app.launch",
+  "web.search",
+  "web.navigate",
+  "comm.message",
+  "assistant.unknown",
+] as const;
+
+export type IntentName = typeof INTENT_LABELS[number];
 
 export interface SlotValue {
   rawValue: string;
@@ -35,322 +32,185 @@ export interface CommandAST {
   latencyMs: number;
 }
 
+// Canonical anchor descriptions used to match user embeddings against intents
+const INTENT_ANCHORS: Record<IntentName, string> = {
+  "app.launch": "open, launch, start, run an application software program on the computer",
+  "web.search": "search Google, look up information, find results on the internet",
+  "web.navigate": "go to website, visit URL, browse domain page",
+  "comm.message": "send message, text chat on whatsapp, contact somebody",
+  "assistant.unknown": "random conversational text, unhandled phrase",
+};
+
 export class SLMIntentParser {
-  private tokenizer: FastTokenizer;
-  private session: SLMInferenceSession;
+  private tokenizer: WordPieceTokenizer;
+  private engine: OnnxInferenceEngine;
   private adapter: LoRAAdapterHead;
+  private anchorEmbeddings: Map<IntentName, Float32Array> = new Map();
+  private initializedAnchors = false;
 
   constructor(options?: {
-    tokenizer?: FastTokenizer;
-    session?: SLMInferenceSession;
+    tokenizer?: WordPieceTokenizer;
+    engine?: OnnxInferenceEngine;
     adapter?: LoRAAdapterHead;
-    config?: Partial<SLMConfig>;
   }) {
     this.tokenizer = options?.tokenizer ?? defaultTokenizer;
-    this.session = options?.session ?? new SLMInferenceSession(createDefaultModelWeights());
-    this.adapter = options?.adapter ?? new LoRAAdapterHead();
+    this.engine = options?.engine ?? defaultInferenceEngine;
+    this.adapter = options?.adapter ?? new LoRAAdapterHead({ inFeatures: 384, outFeatures: 5 });
+  }
+
+  private async ensureAnchors(): Promise<void> {
+    if (this.initializedAnchors) return;
+    for (const [intent, text] of Object.entries(INTENT_ANCHORS)) {
+      const res = await this.engine.embed(text);
+      this.anchorEmbeddings.set(intent as IntentName, res.sentenceEmbedding);
+    }
+    this.initializedAnchors = true;
   }
 
   public getAdapter(): LoRAAdapterHead {
     return this.adapter;
   }
 
-  public getSession(): SLMInferenceSession {
-    return this.session;
+  private cosineSimilarity(a: Float32Array, b: Float32Array): number {
+    let dot = 0;
+    for (let i = 0; i < a.length; i++) {
+      dot += a[i]! * b[i]!;
+    }
+    return Math.max(0, Math.min(1, dot));
   }
 
-  public getTokenizer(): FastTokenizer {
-    return this.tokenizer;
-  }
-
-  /**
-   * Parses a natural language user query using on-device SLM inference.
-   */
-  public async parse(inputText: string): Promise<CommandAST> {
-    const rawInput = inputText.trim();
-    if (!rawInput) {
-      return this.buildUnknownAST(rawInput, 0.0, 0);
+  public async parse(rawInput: string): Promise<CommandAST> {
+    const start = performance.now();
+    const clean = rawInput.trim();
+    if (!clean) {
+      return this.buildUnknown(rawInput, 0);
     }
 
-    // 1. Tokenization & Attention Mask Creation
-    const encoded = this.tokenizer.encode(rawInput, { maxSeqLen: 32, addSpecialTokens: true });
+    await this.ensureAnchors();
 
-    // 2. Transformer Forward Pass
-    const inferenceOut = this.session.run(encoded.inputIds, encoded.attentionMask);
+    // 1. Run real MiniLM ONNX forward pass
+    const inference = await this.engine.embed(clean);
+    const embedding = inference.sentenceEmbedding;
 
-    // 3. Apply On-Device LoRA Personalization Adapter
-    const adaptedLogits = this.adapter.adapt(
-      inferenceOut.intentLogits,
-      inferenceOut.pooledRepresentation
-    );
+    // 2. Compute similarity against intent anchors
+    const similarities = INTENT_LABELS.map((intent) => {
+      const anchor = this.anchorEmbeddings.get(intent)!;
+      return { intent, score: this.cosineSimilarity(embedding, anchor) };
+    });
 
-    // 4. Softmax Intent Probabilities
-    const probabilities = SLMInferenceSession.softmax(adaptedLogits);
-    const winIndex = SLMInferenceSession.argMax(probabilities);
-    const winIntent = INTENT_LABELS[winIndex] ?? "unknown";
-    const confidence = probabilities[winIndex] ?? 0.0;
+    // 3. Apply LoRA Personalization adapter
+    const adapterDeltas = this.adapter.forward(embedding);
+    const combinedScores = similarities.map((item, idx) => ({
+      intent: item.intent,
+      score: item.score + (adapterDeltas[idx] ?? 0),
+    }));
 
-    // 5. Extract slots and map to structured Command
-    const { slots, command } = this.extractSlotsAndCommand(rawInput, winIntent, confidence);
+    combinedScores.sort((a, b) => b.score - a.score);
+    const top = combinedScores[0]!;
+
+    // 4. Slot extraction based on detected intent
+    const slots = this.extractSlots(clean, top.intent);
+    const command = this.mapToCommand(top.intent, slots, clean);
 
     return {
       version: 1,
       id: randomUUID(),
       sourceText: rawInput,
-      intent: winIntent,
-      confidence,
+      intent: top.intent,
+      confidence: Math.min(1.0, top.score),
       slots,
       fallbackApplied: false,
       command,
-      latencyMs: inferenceOut.latencyMs,
+      latencyMs: performance.now() - start,
     };
   }
 
-  /**
-   * Trains the on-device LoRA adapter with a personalized phrasing example.
-   * This immediately adapts model predictions for custom user shorthand.
-   */
-  public trainPersonalPhrase(
-    phrase: string,
-    targetIntent: IntentName,
-    learningRate = 0.08,
-    steps = 4
-  ): { initialLoss: number; finalLoss: number; initialProb: number; finalProb: number } {
-    const targetIdx = INTENT_LABELS.indexOf(targetIntent);
-    if (targetIdx === -1) {
-      throw new Error(`Unknown target intent: ${targetIntent}`);
-    }
-
-    const encoded = this.tokenizer.encode(phrase, { maxSeqLen: 32, addSpecialTokens: true });
-    const out = this.session.run(encoded.inputIds, encoded.attentionMask);
-
-    let initialLoss = 0.0;
-    let initialProb = 0.0;
-    let finalLoss = 0.0;
-    let finalProb = 0.0;
-
-    for (let step = 0; step < steps; step++) {
-      const trainRes = this.adapter.trainStep(
-        out.pooledRepresentation,
-        targetIdx,
-        out.intentLogits,
-        learningRate
-      );
-
-      if (step === 0) {
-        initialLoss = trainRes.loss;
-        initialProb = trainRes.targetProb;
-      }
-      finalLoss = trainRes.loss;
-      finalProb = trainRes.targetProb;
-    }
-
-    return {
-      initialLoss,
-      finalLoss,
-      initialProb,
-      finalProb,
-    };
-  }
-
-  /**
-   * Extracts parameter slots and builds the appropriate skill command.
-   */
-  private extractSlotsAndCommand(
-    rawText: string,
-    intent: IntentName,
-    confidence: number
-  ): { slots: Record<string, SlotValue>; command: Command } {
-    const text = rawText.trim();
+  private extractSlots(text: string, intent: IntentName): Record<string, SlotValue> {
     const slots: Record<string, SlotValue> = {};
+    const lower = text.toLowerCase();
 
+    if (intent === "app.launch") {
+      const match = lower.match(/(?:open|launch|start|run)\s+(?:my\s+)?([a-z0-9_\-\s]+)/i);
+      const appName = match ? match[1]!.trim() : text.trim();
+      slots.appIdentifier = { rawValue: appName, normalizedValue: appName, confidence: 0.9 };
+    } else if (intent === "comm.message") {
+      const match = lower.match(/(?:send|message|text)\s+["']?(.+?)["']?\s+to\s+([a-z0-9_\-\s]+)/i);
+      if (match) {
+        slots.messageBody = { rawValue: match[1]!.trim(), normalizedValue: match[1]!.trim(), confidence: 0.95 };
+        slots.recipient = { rawValue: match[2]!.trim(), normalizedValue: match[2]!.trim(), confidence: 0.95 };
+      }
+    } else if (intent === "web.search") {
+      const match = lower.match(/(?:search|look\s+up|google|find)\s+(?:for\s+)?(.+?)(?:\s+on\s+([a-z0-9]+))?$/i);
+      if (match) {
+        slots.query = { rawValue: match[1]!.trim(), normalizedValue: match[1]!.trim(), confidence: 0.9 };
+        if (match[2]) {
+          slots.provider = { rawValue: match[2].trim(), normalizedValue: match[2].trim(), confidence: 0.95 };
+        }
+      } else {
+        slots.query = { rawValue: text, normalizedValue: text, confidence: 0.7 };
+      }
+    } else if (intent === "web.navigate") {
+      const match = lower.match(/(?:go\s+to|visit|open)\s+(.+)/i);
+      const url = match ? match[1]!.trim() : text.trim();
+      slots.url = { rawValue: url, normalizedValue: url, confidence: 0.9 };
+    }
+
+    return slots;
+  }
+
+  private mapToCommand(intent: IntentName, slots: Record<string, SlotValue>, rawText: string): Command {
     switch (intent) {
-      case "app.launch": {
-        // Extract application target name
-        let target = text
-          .replace(/^(?:please\s+)?(?:launch|open|start|run)\s+(?:my\s+)?(?:the\s+)?(?:app\s+)?/i, "")
-          .replace(/\s+(?:app|application)$/i, "")
-          .trim();
-
-        if (!target) {
-          target = text;
-        }
-
-        slots.appIdentifier = {
-          rawValue: target,
-          normalizedValue: target.toLowerCase(),
-          confidence,
-        };
-
+      case "app.launch":
         return {
-          slots,
-          command: {
-            skill: "openApp",
-            params: { target },
+          skill: "openApp",
+          params: { target: String(slots.appIdentifier?.normalizedValue || rawText) },
+        };
+      case "web.search":
+        return {
+          skill: "browser",
+          params: {
+            action: "search",
+            query: String(slots.query?.normalizedValue || rawText),
+            provider: String(slots.provider?.normalizedValue || "google"),
           },
         };
-      }
-
-      case "web.search": {
-        // Check for specific provider: "on <provider>"
-        let query = text;
-        let provider = "google";
-
-        const providerMatch = query.match(
-          /\s+on\s+(google|youtube|netflix|github|reddit|bing|duckduckgo)\b/i
-        );
-
-        if (providerMatch && providerMatch[1]) {
-          provider = providerMatch[1].toLowerCase();
-          query = query.replace(/\s+on\s+(google|youtube|netflix|github|reddit|bing|duckduckgo)\b/i, "");
-        }
-
-        // Strip search prefix verbs
-        query = query
-          .replace(/^(?:please\s+)?(?:look\s+up|search\s+for|search|find|google)\s+/i, "")
-          .trim();
-
-        slots.query = {
-          rawValue: query,
-          normalizedValue: query,
-          confidence,
-        };
-        slots.provider = {
-          rawValue: provider,
-          normalizedValue: provider,
-          confidence: 0.99,
-        };
-
+      case "web.navigate":
         return {
-          slots,
-          command: {
-            skill: "browser",
-            params: {
-              action: "search",
-              query,
-              provider,
-            },
+          skill: "browser",
+          params: {
+            action: "navigate",
+            url: String(slots.url?.normalizedValue || rawText),
           },
         };
-      }
-
-      case "web.navigate": {
-        let url = text.replace(/^(?:please\s+)?(?:go\s+to|visit|browse\s+to|open)\s+/i, "").trim();
-        if (!/^https?:\/\//i.test(url) && !url.includes(".")) {
-          url = `https://www.${url}.com`;
-        } else if (!/^https?:\/\//i.test(url)) {
-          url = `https://${url}`;
-        }
-
-        slots.url = {
-          rawValue: url,
-          normalizedValue: url,
-          confidence,
-        };
-
+      case "comm.message":
         return {
-          slots,
-          command: {
-            skill: "browser",
-            params: {
-              action: "navigate",
-              url,
-            },
+          skill: "whatsApp",
+          params: {
+            message: String(slots.messageBody?.normalizedValue || ""),
+            recipientName: String(slots.recipient?.normalizedValue || ""),
           },
         };
-      }
-
-      case "comm.message": {
-        let recipientName = "";
-        let message = "";
-
-        // Pattern 1: "message/send/text <recipient> saying <message>"
-        const sayingMatch = text.match(
-          /(?:send|message|text|whatsapp)\s+([^:]+?)\s+(?:saying|that)\s+(.+)$/i
-        );
-        if (sayingMatch && sayingMatch[1] && sayingMatch[2]) {
-          recipientName = sayingMatch[1].trim().replace(/^(?:to|my)\s+/i, "");
-          message = sayingMatch[2].trim().replace(/^["']|["']$/g, "");
-        } else {
-          // Pattern 2: "message/send/text <message> to <recipient>"
-          const toMatch = text.match(
-            /(?:send|message|text|whatsapp)\s+(.+?)\s+to\s+([^:]+?)$/i
-          );
-          if (toMatch && toMatch[1] && toMatch[2]) {
-            message = toMatch[1].trim().replace(/^["']|["']$/g, "");
-            recipientName = toMatch[2].trim();
-          } else {
-            // Pattern 3: "message/text <recipient>: <message>"
-            const colonMatch = text.match(
-              /(?:send|message|text|whatsapp)\s+([^:]+?):\s*(.+)$/i
-            );
-            if (colonMatch && colonMatch[1] && colonMatch[2]) {
-              recipientName = colonMatch[1].trim();
-              message = colonMatch[2].trim().replace(/^["']|["']$/g, "");
-            } else {
-              // Fallback
-              const tokens = text.split(" ");
-              recipientName = tokens[1] ?? "contact";
-              message = tokens.slice(2).join(" ") || "hello";
-            }
-          }
-        }
-
-        slots.recipient = {
-          rawValue: recipientName,
-          normalizedValue: recipientName.toLowerCase(),
-          confidence,
-        };
-        slots.message = {
-          rawValue: message,
-          normalizedValue: message,
-          confidence,
-        };
-
+      default:
         return {
-          slots,
-          command: {
-            skill: "whatsApp",
-            params: {
-              recipientName,
-              message,
-            },
-          },
+          skill: "openApp",
+          params: { target: rawText },
         };
-      }
-
-      default: {
-        return {
-          slots,
-          command: {
-            skill: "browser",
-            params: {
-              action: "search",
-              query: text,
-              provider: "google",
-            },
-          },
-        };
-      }
     }
   }
 
-  private buildUnknownAST(sourceText: string, confidence: number, latencyMs: number): CommandAST {
+  private buildUnknown(sourceText: string, latencyMs: number): CommandAST {
     return {
       version: 1,
       id: randomUUID(),
       sourceText,
-      intent: "unknown",
-      confidence,
+      intent: "assistant.unknown",
+      confidence: 0,
       slots: {},
-      fallbackApplied: false,
-      command: {
-        skill: "browser",
-        params: { action: "search", query: sourceText, provider: "google" },
-      },
+      fallbackApplied: true,
+      command: { skill: "openApp", params: { target: "" } },
       latencyMs,
     };
   }
 }
 
-export const defaultSLMIntentParser = new SLMIntentParser();
+export const defaultSLMParser = new SLMIntentParser();
