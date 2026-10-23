@@ -216,7 +216,7 @@ export class FastTokenizer {
     return text
       .normalize("NFKC")
       .toLowerCase()
-      .replace(/[\r\n\t]+/g, " ")
+      .replace(/\s+/g, " ")
       .replace(/[^\x20-\x7E]/g, "") // Keep printable ASCII
       .trim();
   }

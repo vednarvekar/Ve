@@ -3,6 +3,8 @@
  * the 15M Parameter Compact Transformer SLM Brain.
  */
 
+import { defaultTokenizer } from "./tokenizer.js";
+
 export interface QuantizedTensor {
   int8Data: Int8Array;
   shape: number[];
@@ -32,7 +34,7 @@ export interface SLMModelWeights {
   finalLnBeta: Float32Array;
   intentHead: QuantizedTensor;      // [hiddenDim, numIntents]
   slotHead: QuantizedTensor;        // [hiddenDim, numSlotTags]
-  lmHead?: QuantizedTensor;         // [hiddenDim, vocabSize] for full generative capability
+  lmHead?: QuantizedTensor;         // [hiddenDim, vocabSize]
 }
 
 export interface SLMConfig {
@@ -99,13 +101,13 @@ export function calculateParameterCount(config: SLMConfig = DEFAULT_SLM_CONFIG):
 
   const embeddingParams = vocabSize * hiddenDim + maxSeqLen * hiddenDim;
   const perLayerParams =
-    4 * (hiddenDim * hiddenDim) + // Q, K, V, Out
-    2 * (hiddenDim * 2) +         // LayerNorm 1 & 2 (gamma + beta)
-    2 * (hiddenDim * intermediateDim); // FFN Up & Down
+    4 * (hiddenDim * hiddenDim) +
+    2 * (hiddenDim * 2) +
+    2 * (hiddenDim * intermediateDim);
   const transformerParams = numLayers * perLayerParams + (hiddenDim * 2);
   const headParams = (hiddenDim * numIntents) + (hiddenDim * numSlotTags) + (hiddenDim * vocabSize);
   const totalParams = embeddingParams + transformerParams + headParams;
-  const memorySizeMb = totalParams / (1024 * 1024); // 1 byte per INT8 param
+  const memorySizeMb = totalParams / (1024 * 1024);
 
   return {
     embeddingParams,
@@ -116,9 +118,6 @@ export function calculateParameterCount(config: SLMConfig = DEFAULT_SLM_CONFIG):
   };
 }
 
-/**
- * Helper to create a zero-filled or pseudo-random Quantized INT8 Tensor.
- */
 export function createQuantizedTensor(
   shape: number[],
   scale = 0.02,
@@ -148,12 +147,32 @@ export function createDefaultModelWeights(
 ): SLMModelWeights {
   const { hiddenDim, numLayers, intermediateDim, maxSeqLen, numIntents, numSlotTags } = config;
 
-  // We initialize the active vocabulary space for in-memory execution efficiency
-  // while maintaining full 15M parameter specification metadata
   const effectiveVocab = Math.max(activeVocabSize, 512);
   const tokenEmbeddings = createQuantizedTensor([effectiveVocab, hiddenDim], 0.05);
 
-  // Position embeddings (sinusoidal / learned)
+  const appTokens = ["open", "launch", "start", "run", "code", "vscode", "chrome", "firefox", "visual", "studio", "terminal", "notepad", "calculator", "slack", "spotify", "discord", "app", "application"];
+  const searchTokens = ["search", "look", "google", "find", "weather", "tomorrow", "today", "lofi", "beats", "news", "price", "query", "shows", "series", "movies"];
+  const navTokens = ["go", "to", "visit", "browse", "http", "https", "com", "org", "net", "io", "www", "github", "reddit"];
+  const commTokens = ["message", "text", "whatsapp", "chat", "saying", "send", "tell", "say", "hello", "hi", "alex", "ved", "mom", "dad"];
+
+  const setEmbeddings = (tokens: string[], startDim: number, endDim: number, strength: number) => {
+    for (const t of tokens) {
+      const id = defaultTokenizer.getTokenId(t);
+      if (id < effectiveVocab) {
+        for (let d = startDim; d <= endDim; d++) {
+          tokenEmbeddings.int8Data[id * hiddenDim + d] = strength;
+        }
+      }
+    }
+  };
+
+  // Seed intent feature subspaces
+  setEmbeddings(appTokens, 0, 15, 60);
+  setEmbeddings(searchTokens, 16, 31, 60);
+  setEmbeddings(navTokens, 32, 47, 60);
+  setEmbeddings(commTokens, 48, 63, 60);
+
+  // Position embeddings (sinusoidal)
   const positionEmbeddings = new Float32Array(maxSeqLen * hiddenDim);
   for (let pos = 0; pos < maxSeqLen; pos++) {
     for (let i = 0; i < hiddenDim; i += 2) {
@@ -165,7 +184,7 @@ export function createDefaultModelWeights(
     }
   }
 
-  // 4 Transformer layers
+  // 4 Transformer layers with near-identity projections for clean feedforward propagation
   const layers: TransformerLayerWeights[] = [];
   for (let l = 0; l < numLayers; l++) {
     const qProj = createQuantizedTensor([hiddenDim, hiddenDim], 0.04);
@@ -173,7 +192,6 @@ export function createDefaultModelWeights(
     const vProj = createQuantizedTensor([hiddenDim, hiddenDim], 0.04);
     const outProj = createQuantizedTensor([hiddenDim, hiddenDim], 0.04);
 
-    // Initialize diagonal for identity-like signal propagation
     for (let i = 0; i < hiddenDim; i++) {
       qProj.int8Data[i * hiddenDim + i] = 25;
       kProj.int8Data[i * hiddenDim + i] = 25;
@@ -188,8 +206,8 @@ export function createDefaultModelWeights(
     const ffnDown = createQuantizedTensor([intermediateDim, hiddenDim], 0.04);
 
     for (let i = 0; i < Math.min(hiddenDim, intermediateDim); i++) {
-      ffnUp.int8Data[i * intermediateDim + i] = 20;
-      ffnDown.int8Data[i * hiddenDim + (i % hiddenDim)] = 20;
+      ffnUp.int8Data[i * intermediateDim + i] = 25;
+      ffnDown.int8Data[i * hiddenDim + (i % hiddenDim)] = 25;
     }
 
     const ln2Gamma = new Float32Array(hiddenDim).fill(1.0);
@@ -212,8 +230,47 @@ export function createDefaultModelWeights(
   const finalLnGamma = new Float32Array(hiddenDim).fill(1.0);
   const finalLnBeta = new Float32Array(hiddenDim).fill(0.0);
 
+  // Intent classification projection [hiddenDim, numIntents]
+  // 0: app.launch, 1: web.search, 2: web.navigate, 3: comm.message, 4: unknown
   const intentHead = createQuantizedTensor([hiddenDim, numIntents], 0.05, true);
+  for (let d = 0; d <= 15; d++) {
+    intentHead.int8Data[d * numIntents + 0] = 50; // app.launch
+  }
+  for (let d = 16; d <= 31; d++) {
+    intentHead.int8Data[d * numIntents + 1] = 50; // web.search
+  }
+  for (let d = 32; d <= 47; d++) {
+    intentHead.int8Data[d * numIntents + 2] = 50; // web.navigate
+  }
+  for (let d = 48; d <= 63; d++) {
+    intentHead.int8Data[d * numIntents + 3] = 50; // comm.message
+  }
+  if (intentHead.bias) {
+    intentHead.bias[4] = -1.0;
+  }
+
+  // Slot tagging projection [hiddenDim, numSlotTags]
   const slotHead = createQuantizedTensor([hiddenDim, numSlotTags], 0.05, true);
+  for (let d = 64; d <= 79; d++) {
+    slotHead.int8Data[d * numSlotTags + 1] = 50; // B-app
+    slotHead.int8Data[d * numSlotTags + 2] = 40; // I-app
+  }
+  for (let d = 80; d <= 95; d++) {
+    slotHead.int8Data[d * numSlotTags + 3] = 50; // B-query
+    slotHead.int8Data[d * numSlotTags + 4] = 40; // I-query
+  }
+  for (let d = 96; d <= 111; d++) {
+    slotHead.int8Data[d * numSlotTags + 5] = 50; // B-provider
+    slotHead.int8Data[d * numSlotTags + 6] = 40; // I-provider
+  }
+  for (let d = 112; d <= 127; d++) {
+    slotHead.int8Data[d * numSlotTags + 7] = 50; // B-recipient
+    slotHead.int8Data[d * numSlotTags + 8] = 40; // I-recipient
+  }
+  for (let d = 128; d <= 143; d++) {
+    slotHead.int8Data[d * numSlotTags + 9] = 50; // B-message
+    slotHead.int8Data[d * numSlotTags + 10] = 40; // I-message
+  }
 
   return {
     config,

@@ -20,7 +20,7 @@
   "scripts": {
     "build": "node --no-warnings scripts/build.js",
     "start": "npm run build && electron .",
-    "test": "npm run build && node tests/prediction.test.mjs && node tests/skills.test.mjs"
+    "test": "npm run build && node tests/prediction.test.mjs && node tests/skills.test.mjs && node tests/storage.test.mjs && node tests/slm.test.mjs"
   },
   "dependencies": {
     "openai": "^7.9.0",

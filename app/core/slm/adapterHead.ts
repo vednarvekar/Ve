@@ -198,7 +198,8 @@ export class LoRAAdapterHead {
       const rowOffset = o * rank;
       for (let r = 0; r < rank; r++) {
         const gradB = this.scale * gVal * (u[r] ?? 0);
-        this.matrixB[rowOffset + r] -= learningRate * gradB;
+        const currentB = this.matrixB[rowOffset + r] ?? 0;
+        this.matrixB[rowOffset + r] = currentB - learningRate * gradB;
       }
     }
 
@@ -208,7 +209,8 @@ export class LoRAAdapterHead {
       const rowOffset = r * inFeatures;
       for (let j = 0; j < inFeatures; j++) {
         const gradA = uGrad * (inputRepresentation[j] ?? 0);
-        this.matrixA[rowOffset + j] -= learningRate * gradA;
+        const currentA = this.matrixA[rowOffset + j] ?? 0;
+        this.matrixA[rowOffset + j] = currentA - learningRate * gradA;
       }
     }
 
