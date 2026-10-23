@@ -9,6 +9,7 @@ export const INTENT_LABELS = [
   "web.search",
   "web.navigate",
   "comm.message",
+  "conversational.greeting",
   "assistant.unknown",
 ] as const;
 
@@ -28,17 +29,19 @@ export interface CommandAST {
   confidence: number;
   slots: Record<string, SlotValue>;
   fallbackApplied: boolean;
-  command: Command;
+  command?: Command | undefined;
+  conversationalReply?: string | undefined;
   latencyMs: number;
 }
 
-// Canonical anchor descriptions used to match user embeddings against intents
+// Canonical neural anchors for semantic space classification
 const INTENT_ANCHORS: Record<IntentName, string> = {
-  "app.launch": "open, launch, start, run an application software program on the computer",
-  "web.search": "search Google, look up information, find results on the internet",
-  "web.navigate": "go to website, visit URL, browse domain page",
-  "comm.message": "send message, text chat on whatsapp, contact somebody",
-  "assistant.unknown": "random conversational text, unhandled phrase",
+  "app.launch": "open application, launch software program, open chrome, open terminal, open vscode, open calculator, open notepad",
+  "web.navigate": "visit website url, browse web domain page, open youtube.com, open netflix.com, open github.com",
+  "conversational.greeting": "hello, hi, hey, greetings, good morning, good evening, how are you",
+  "web.search": "search query on Google, look up information on web, find internet results",
+  "comm.message": "send message, text a friend on whatsapp, chat with contact",
+  "assistant.unknown": "unrecognized input or random characters",
 };
 
 export class SLMIntentParser {
@@ -55,7 +58,7 @@ export class SLMIntentParser {
   }) {
     this.tokenizer = options?.tokenizer ?? defaultTokenizer;
     this.engine = options?.engine ?? defaultInferenceEngine;
-    this.adapter = options?.adapter ?? new LoRAAdapterHead({ inFeatures: 384, outFeatures: 5 });
+    this.adapter = options?.adapter ?? new LoRAAdapterHead({ inFeatures: 384, outFeatures: 6 });
   }
 
   private async ensureAnchors(): Promise<void> {
@@ -92,13 +95,13 @@ export class SLMIntentParser {
     const inference = await this.engine.embed(clean);
     const embedding = inference.sentenceEmbedding;
 
-    // 2. Compute similarity against intent anchors
+    // 2. Compute similarity against neural intent anchors
     const similarities = INTENT_LABELS.map((intent) => {
       const anchor = this.anchorEmbeddings.get(intent)!;
       return { intent, score: this.cosineSimilarity(embedding, anchor) };
     });
 
-    // 3. Apply LoRA Personalization adapter
+    // 3. Apply personal LoRA adapter weights
     const adapterDeltas = this.adapter.forward(embedding);
     const combinedScores = similarities.map((item, idx) => ({
       intent: item.intent,
@@ -108,7 +111,22 @@ export class SLMIntentParser {
     combinedScores.sort((a, b) => b.score - a.score);
     const top = combinedScores[0]!;
 
-    // 4. Slot extraction based on detected intent
+    // 4. Handle conversational greeting directly from SLM
+    if (top.intent === "conversational.greeting" && top.score >= 0.28) {
+      return {
+        version: 1,
+        id: randomUUID(),
+        sourceText: rawInput,
+        intent: "conversational.greeting",
+        confidence: top.score,
+        slots: {},
+        fallbackApplied: false,
+        conversationalReply: "Hey! What would you like to do on your desktop?",
+        latencyMs: performance.now() - start,
+      };
+    }
+
+    // 5. Extract slots and map to structured command
     const slots = this.extractSlots(clean, top.intent);
     const command = this.mapToCommand(top.intent, slots, clean);
 
@@ -132,7 +150,11 @@ export class SLMIntentParser {
     if (intent === "app.launch") {
       const match = lower.match(/(?:open|launch|start|run)\s+(?:my\s+)?([a-z0-9_\-\s]+)/i);
       const appName = match ? match[1]!.trim() : text.trim();
-      slots.appIdentifier = { rawValue: appName, normalizedValue: appName, confidence: 0.9 };
+      slots.appIdentifier = { rawValue: appName, normalizedValue: appName, confidence: 0.95 };
+    } else if (intent === "web.navigate") {
+      const match = lower.match(/(?:open|go\s+to|visit)\s+(?:my\s+)?([a-z0-9_\-\s.]+)/i);
+      const target = match ? match[1]!.trim() : text.trim();
+      slots.url = { rawValue: target, normalizedValue: target, confidence: 0.95 };
     } else if (intent === "comm.message") {
       const match = lower.match(/(?:send|message|text)\s+["']?(.+?)["']?\s+to\s+([a-z0-9_\-\s]+)/i);
       if (match) {
@@ -149,10 +171,6 @@ export class SLMIntentParser {
       } else {
         slots.query = { rawValue: text, normalizedValue: text, confidence: 0.7 };
       }
-    } else if (intent === "web.navigate") {
-      const match = lower.match(/(?:go\s+to|visit|open)\s+(.+)/i);
-      const url = match ? match[1]!.trim() : text.trim();
-      slots.url = { rawValue: url, normalizedValue: url, confidence: 0.9 };
     }
 
     return slots;
@@ -165,6 +183,14 @@ export class SLMIntentParser {
           skill: "openApp",
           params: { target: String(slots.appIdentifier?.normalizedValue || rawText) },
         };
+      case "web.navigate":
+        return {
+          skill: "browser",
+          params: {
+            action: "navigate",
+            url: String(slots.url?.normalizedValue || rawText),
+          },
+        };
       case "web.search":
         return {
           skill: "browser",
@@ -172,14 +198,6 @@ export class SLMIntentParser {
             action: "search",
             query: String(slots.query?.normalizedValue || rawText),
             provider: String(slots.provider?.normalizedValue || "google"),
-          },
-        };
-      case "web.navigate":
-        return {
-          skill: "browser",
-          params: {
-            action: "navigate",
-            url: String(slots.url?.normalizedValue || rawText),
           },
         };
       case "comm.message":

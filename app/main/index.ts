@@ -1,7 +1,7 @@
 import { app, globalShortcut, ipcMain } from "electron";
 import { createTray } from "./tray.js";
 import { togglePopup } from "./popupWindow.js";
-import { handleCommand } from "../core/intentParser/commandFallback.js";
+import { executeUserInput } from "../core/intentParser/index.js";
 import {
   listMemories,
   addMemory,
@@ -47,7 +47,7 @@ app.on("will-quit", () => {
 // through the deterministic skill router and returns the result.
 ipcMain.handle("ve:run-command", async (_event, input: string) => {
   try {
-    const result = await handleCommand(input);
+    const result = await executeUserInput(input);
     const action = result.behaviorAction || (result.command ? `${result.command.skill}` : "unknown");
     const params = result.command?.params || {};
     const outcome = result.success ? "success" : "failure";

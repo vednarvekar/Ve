@@ -1,5 +1,6 @@
 import type { Command, SkillResult } from "../schema/commandSchema.js";
 import { defaultSkillRouter } from "../skills/index.js";
+import { COMMON_DOMAIN_ALIASES } from "../skills/modules/browser/providerUrls.js";
 
 export interface CommandResult extends SkillResult {
   command?: Command | undefined;
@@ -59,7 +60,12 @@ export function hardcodedCommands(rawInput: string): Command | null {
   // 3. Open App or Web URL
   if (input.startsWith("open ")) {
     const target = input.slice("open ".length).trim();
-    if (target.startsWith("https://") || target.startsWith("http://")) {
+    if (
+      target.startsWith("https://") ||
+      target.startsWith("http://") ||
+      COMMON_DOMAIN_ALIASES[target] ||
+      /\.(com|org|net|io|co|in|dev|app|ai)$/i.test(target)
+    ) {
       return { skill: "browser", params: { action: "navigate", url: target } };
     }
     return { skill: "openApp", params: { target } };

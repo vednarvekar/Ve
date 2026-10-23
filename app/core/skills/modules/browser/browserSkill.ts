@@ -1,6 +1,6 @@
 import { platform } from "node:os";
 import type { BaseSkill, SkillContext, SkillResult, SkillValidationResult } from "../../contracts/skillTypes.js";
-import { findWslChrome, launchDetached } from "../../platform/osLauncher.js";
+import { openUrlInSystemBrowser } from "../../platform/osLauncher.js";
 import { buildSearchUrl, normalizeBrowserTarget, type SearchProvider } from "./providerUrls.js";
 
 export type BrowserAction = "navigate" | "search";
@@ -74,7 +74,7 @@ export class BrowserSkill implements BaseSkill<BrowserParams> {
       return { success: false, message: `Invalid URL: "${targetUrl}".` };
     }
 
-    // Custom injected opener if provided (e.g. In tests or custom runner)
+    // Injected opener for tests or custom runner
     if (context.urlOpener) {
       const res = await context.urlOpener(targetUrl);
       return {
@@ -84,43 +84,8 @@ export class BrowserSkill implements BaseSkill<BrowserParams> {
       };
     }
 
-    // WSL Environment handling
-    if (context.isWsl) {
-      const chromePath = findWslChrome();
-      if (chromePath) {
-        const res = await launchDetached(chromePath, [targetUrl], "Google Chrome");
-        return {
-          ...res,
-          message: res.success ? successMessage : res.message,
-          behaviorAction: res.success ? behaviorAction : undefined,
-        };
-      }
-      return {
-        success: false,
-        message: "Could not find host Windows Chrome in WSL environment to open this URL.",
-      };
-    }
-
-    // Electron environment
-    try {
-      const electron = await import("electron").catch(() => null);
-      if (electron?.shell?.openExternal) {
-        await electron.shell.openExternal(targetUrl);
-        return {
-          success: true,
-          message: successMessage,
-          behaviorAction,
-        };
-      }
-    } catch {
-      // Fall through to native OS launcher
-    }
-
-    // Native OS launch fallback
-    const currentOs = platform();
-    const launcher = currentOs === "win32" ? "cmd.exe" : currentOs === "darwin" ? "open" : "xdg-open";
-    const args = currentOs === "win32" ? ["/c", "start", "", targetUrl] : [targetUrl];
-    const res = await launchDetached(launcher, args, "Browser");
+    // Open via OS shell into user's existing active browser window
+    const res = await openUrlInSystemBrowser(targetUrl);
     return {
       ...res,
       message: res.success ? successMessage : res.message,

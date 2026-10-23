@@ -1,4 +1,5 @@
 import { platform } from "node:os";
+import { existsSync } from "node:fs";
 import type { BaseSkill, SkillContext, SkillResult, SkillValidationResult } from "../../contracts/skillTypes.js";
 import { findWslChrome, launchDetached } from "../../platform/osLauncher.js";
 
@@ -12,6 +13,8 @@ export const APP_ALIASES: Record<string, { win: string; mac: string; linux: stri
   firefox: { win: "firefox.exe", mac: "Firefox", linux: "firefox", canonicalId: "firefox" },
   vscode: { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
   "vs code": { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
+  "visual studio code": { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
+  code: { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
   calculator: { win: "calc.exe", mac: "Calculator", linux: "gnome-calculator", canonicalId: "calculator" },
   calc: { win: "calc.exe", mac: "Calculator", linux: "gnome-calculator", canonicalId: "calculator" },
   notepad: { win: "notepad.exe", mac: "TextEdit", linux: "gedit", canonicalId: "notepad" },
@@ -57,6 +60,14 @@ export class OpenAppSkill implements BaseSkill<OpenAppParams> {
     }
 
     if (context.isWsl && (rawTarget === "chrome" || rawTarget === "google chrome")) {
+      const cmdExe = "/mnt/c/Windows/System32/cmd.exe";
+      if (existsSync(cmdExe)) {
+        const res = await launchDetached(cmdExe, ["/c", "start", "chrome"], "Google Chrome");
+        return {
+          ...res,
+          behaviorAction: `open_app:${alias.canonicalId}`,
+        };
+      }
       const chromePath = findWslChrome();
       if (chromePath) {
         const res = await launchDetached(chromePath, [], "Google Chrome");
