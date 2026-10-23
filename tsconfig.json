@@ -28,7 +28,8 @@
   },
   "include": [
     "app/main/**/*.ts",
+    "app/core/**/*.ts",
     "app/preload/**/*.ts",
     "app/preload/**/*.cts"
-, "app/core/intentParser/commandFallback.ts"  ]
+  ]
 }

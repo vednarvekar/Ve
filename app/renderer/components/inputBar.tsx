@@ -21,7 +21,7 @@ export function InputBar({
 
   return (
     <form
-      className="fixed inset-x-0 bottom-0 z-50 flex min-h-14 items-center gap-2 border-t border-ve-border-subtle bg-ve-bg-elevated px-3 py-2.5 backdrop-blur-sm"
+      className="relative z-10 flex min-h-14 shrink-0 items-center gap-2 border-t border-ve-border-subtle bg-ve-bg-elevated px-3 py-2.5"
       onSubmit={handleSubmit}
     >
       <MicButton />

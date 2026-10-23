@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface ChatMessage {
   id: string;
@@ -15,22 +15,48 @@ function nextId(): string {
 }
 
 export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try { localStorage.removeItem("ve:messages"); } catch { /* storage may be disabled */ }
+    return [];
+  });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [behaviorCount, setBehaviorCount] = useState(0);
+
+  const refreshSuggestions = useCallback(async () => {
+    try {
+      const state = await window.ve.getPredictionState();
+      setSuggestions(state.suggestions);
+      setBehaviorCount(state.sampleCount);
+    } catch {
+      setSuggestions([]);
+      setBehaviorCount(0);
+    }
+  }, []);
+
+  useEffect(() => { void refreshSuggestions(); }, [refreshSuggestions]);
+
+  const clearHistory = useCallback(() => {
+    setMessages([]);
+  }, []);
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
-    setMessages((prev) => [
+    setMessages((prev) => {
+      const next: ChatMessage[] = [
       ...prev,
       { id: nextId(), text: trimmed, sender: "user", timestamp: Date.now() },
-    ]);
+      ];
+      return next;
+    });
     setIsProcessing(true);
 
     try {
       const result = await window.ve.runCommand(trimmed);
-      setMessages((prev) => [
+      setMessages((prev) => {
+        const next: ChatMessage[] = [
         ...prev,
         {
           id: nextId(),
@@ -39,9 +65,13 @@ export function useChat() {
           status: result.success ? "success" : "error",
           timestamp: Date.now(),
         },
-      ]);
+        ];
+        return next;
+      });
+      await refreshSuggestions();
     } catch {
-      setMessages((prev) => [
+      setMessages((prev) => {
+        const next: ChatMessage[] = [
         ...prev,
         {
           id: nextId(),
@@ -50,11 +80,13 @@ export function useChat() {
           status: "error",
           timestamp: Date.now(),
         },
-      ]);
+        ];
+        return next;
+      });
     } finally {
       setIsProcessing(false);
     }
-  }, []);
+  }, [refreshSuggestions]);
 
-  return { messages, isProcessing, sendMessage };
+  return { messages, isProcessing, sendMessage, clearHistory, suggestions, behaviorCount, refreshSuggestions };
 }

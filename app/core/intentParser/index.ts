@@ -1,26 +1,16 @@
-import { SkillName, ParsedIntent } from "../schema/commandSchema";
-import { RawParsedIntent } from "./cloudClient";
+import type { ParsedIntent } from "../schema/commandSchema.js";
+import { hardcodedCommands } from "../intentParser/commandFallback.js";
 
-const KNOWN_SKILL: SkillName[] = ["openApp", "openUrl", "webSearch"];
+export async function parsedResponse(rawInput: string): Promise<ParsedIntent> {
+    const trimmed = rawInput.trim();
+    if(!trimmed){
+        return { type: 'unknown'}
+    }
 
-function isKnownSkill(value: unknown): value is SkillName {
-    return typeof value == "string" && (KNOWN_SKILL as string[]).includes(value);
+    const fallBackCommand = hardcodedCommands(trimmed);
+    if(fallBackCommand) {
+        return { type: "command", command: fallBackCommand }
+    }
+
+    return { type: 'unknown' };
 }
-
-function validate(raw: RawParsedIntent): ParsedIntent | null {
-    if(raw.type === "command") {
-        if(!isKnownSkill(raw.skill) || !raw.params) return null;
-        return { type: "command", command: { skill: raw.skill, params: raw.params } };
-    }
-
-    if(raw.type === "clarify") {
-        if(!raw.question) return null;
-        return { type: "clarify", question: raw.question }
-    }
-
-    if(raw.type === "unknown"){
-        return { type: "unknown" }
-    }
-
-    return null;
-} 

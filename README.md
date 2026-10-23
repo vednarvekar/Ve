@@ -2,19 +2,19 @@
 
 **An assistant that learns you — without learning on you.**
 
-Ve is a desktop assistant that sits in the system tray and actually does things: type or speak a request and it opens the app, finds the show, runs the search — instead of just answering questions about it. The part that makes it different: it learns your routines entirely on-device, and improves over time through **federated learning** — sharing only encrypted model updates, never raw personal data.
+Ve is intended to be a desktop assistant that sits in the system tray and performs narrowly scoped actions instead of only answering questions. The long-term differentiator is local personalization and federated learning; those learning systems are planned, not implemented yet.
 
-> ⚠️ **Status**: Early development / brainstorming-to-build phase. Architecture and phases are defined; implementation is in progress. Not yet usable end-to-end.
+> ⚠️ **Status**: Early development. The tray shell, React popup UI, and initial command router exist. Follow our delivery milestones in [`docs/roadmap.md`](./docs/roadmap.md).
 
 ---
 
 ## What it does
 
-- **Executes real actions** — opens apps, opens URLs, runs web searches, and (via browser automation) finds and opens specific content on sites like Netflix.
+- **Designed to execute real actions** — the first planned skills are app launch, URL opening, and web search; executors are not yet complete in the current tree.
 - **Tray-native, not app-native** — a custom popup opens near the system tray, styled like a native Windows flyout, not a separate window competing for your attention.
-- **Type or speak instructions** — a simple chat interface with a text bar and mic button.
-- **Learns on-device** — remembers your preferences (like default browser) and usage patterns without sending behavioral data anywhere.
-- **Federated learning is the core goal, not a footnote** — Ve trains locally, then contributes only encrypted/aggregated model updates to improve prediction quality across users, with raw data never leaving any individual device. Everything else in the project — the tray shell, the skill system, local prediction — exists as the substrate this needs to run on.
+- **Type instructions today; voice is planned** — the chat input works, while the mic button is currently a disabled placeholder.
+- **Designed for on-device learning** — persistence, local prediction, and preference learning are planned but not implemented yet.
+- **Federated learning is the long-term goal** — the planned system will train locally and contribute privacy-reviewed model updates, never raw behavioral logs. The protocol and client do not exist yet.
 - **Predictive startup suggestions (planned)** — a feature built on top of the learning layer: Ve suggests likely next actions on boot, shown only when confidence is high.
 
 ## Why
@@ -26,47 +26,45 @@ Assistants that personalize usually do it by shipping your data to a server. Ve 
 Full JavaScript/TypeScript, front to back:
 
 - **Shell**: Electron (Node.js/TS main process + React/TS renderer)
-- **Intent parsing**: Cloud LLM API (prototyping) → local model via Ollama (privacy release)
-- **Voice input**: whisper.cpp (local, offline speech-to-text)
-- **Browser automation**: Playwright
-- **Storage**: SQLite (`better-sqlite3`)
-- **Prediction model** (v3): trained offline in Python, exported to ONNX, run at inference via `onnxruntime-node` — Python never runs inside the shipped app
+- **Intent parsing**: NVIDIA OpenAI-compatible cloud prototype exists; provider abstraction and local parsing are planned
+- **Voice input**: planned local speech-to-text; no voice runtime exists yet
+- **Browser automation**: planned Playwright-based skills; not installed or implemented yet
+- **Storage**: planned local database; no persistence layer exists yet
+- **Prediction model**: planned; no model, training pipeline, or inference dependency exists yet
 
-See [`docs/architecture.md`](./docs/architecture.md) for the full breakdown, app flow diagram, and file structure.
+See [`docs/architecture.md`](./docs/architecture.md) for the target architecture, and [`docs/roadmap.md`](./docs/roadmap.md) for the implementation roadmap.
 
 ## Architecture (high level)
 
 ```
 Tray icon → Popup chat UI (text + mic)
-          → Intent Parser (LLM)
+          → Intent Parser (LLM / SLM)
           → Skill Router
           → Executors (app launch / URL open / browser automation)
           → Result shown in chat + logged locally
 ```
 
-Every capability is a self-contained **skill module** with a defined input schema — new actions are added without touching core routing logic, the same pattern used internally by assistants like Alexa and Google Assistant.
+The target design uses self-contained **skill modules** with defined input schemas. The current repository has the schema seed but not yet the router or skill modules.
 
 ## Project Docs
 
-- [`docs/product.md`](./docs/product.md) — vision, requirements, feature set (MVP → v3), success criteria
-- [`docs/architecture.md`](./docs/architecture.md) — tech stack, app flow, file structure, key decisions
+- [`docs/roadmap.md`](./docs/roadmap.md) — dependency-ordered delivery milestones and acceptance criteria
+- [`docs/product.md`](./docs/product.md) — vision, users, scope, and product requirements
+- [`docs/architecture.md`](./docs/architecture.md) — target runtime architecture and security boundaries
+- [`docs/federated-learning.md`](./docs/federated-learning.md) — learning objective, privacy model, protocol, and evaluation
 - [`docs/rules.md`](./docs/rules.md) — do's and don'ts across product, privacy, automation, and process
-- [`docs/phases.md`](./docs/phases.md) — build roadmap, phase by phase
 - [`docs/design.md`](./docs/design.md) — colors, typography, theming, motion, accessibility
 
 ## Roadmap Snapshot
 
-1. Tray shell + hardcoded commands (prove the UI loop)
-2. Skill router architecture
-3. LLM-based intent parsing (cloud first)
-4. Voice input (whisper.cpp)
-5. Real executors (browser automation, smart defaults)
-6. Swap to local LLM (Ollama) for offline intent parsing
-7. Local prediction (on-device model, powers startup suggestions — foundation for FL)
-8. **Federated learning** — local training + encrypted model-update sharing across users
-9. Hardening (error handling, settings, permissions)
+1. Hardened desktop shell & deterministic baseline
+2. Modular skill engine & policy gate
+3. Structured local data storage & training dataset generation (SQLite)
+4. Desktop & browser automation (OS + Browser)
+5. 10–20M parameter on-device SLM brain
+6. Local on-device adaptation & federated learning loop
 
-Full detail in [`docs/phases.md`](./docs/phases.md).
+Full detail in [`docs/roadmap.md`](./docs/roadmap.md).
 
 ## Explicitly Out of Scope
 

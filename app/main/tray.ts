@@ -22,6 +22,8 @@ export function createTray() {
     const contextMenu = Menu.buildFromTemplate([
       { label: "Ve", enabled: false },
       { type: "separator" },
+      { label: "Open Ve (Ctrl+Shift+Space)", click: () => { if (tray) togglePopup(tray); } },
+      { type: "separator" },
       { label: "Quit", click: () => app.quit() },
     ]);
     tray.on('right-click', () => {
