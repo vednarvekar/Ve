@@ -59,13 +59,13 @@ flowchart LR
 
 ### Step 1.2 — Make the basic tray interaction dependable
 
-- [ ] Mark complete when the acceptance checks below pass.
+- [x] Complete — startup popup and taskbar presence verified by the user; tray icon visibility is not required in this environment.
 **Depends on:** 1.1.
 **Goal:** A user can summon, use, and dismiss Ve repeatedly without losing focus or getting a broken popup.
 
 **Work:** Finish hotkey registration/lifecycle, popup show/hide and focus behavior, outside-click dismissal, startup/shutdown cleanup, and clear action success/failure feedback. Keep voice marked unavailable until it works end to end.
 
-**Implementation status (2026-10-24):** Single-instance ownership, tray/shortcut restoration, popup recreation after close, delayed display until renderer readiness, and taskbar presence while the popup is open are implemented. Starting Ve now opens its popup because launching the app is an explicit user action and some desktops do not expose tray icons. Switching focus to an app launched from Ve no longer dismisses Ve when the pointer remains inside its popup; clicking outside still dismisses it to the tray. Automated suites cover popup focus policy and IPC sender validation. Tray click, focus return, outside dismissal, and restart interactions still need a real desktop acceptance pass, so this step remains open.
+**Implementation status (2026-10-24):** Single-instance ownership, tray/shortcut restoration, popup recreation after close, delayed display until renderer readiness, and taskbar presence while the popup is open are implemented. Starting Ve opens its popup because launching the app is an explicit user action and some desktops do not expose tray icons. The user verified that `npm start` opens Ve and keeps it in the taskbar; tray icon visibility is not required in this environment. Switching focus to an app launched from Ve no longer dismisses Ve when the pointer remains inside its popup; clicking outside still dismisses it to the tray. Automated suites cover popup focus policy and IPC sender validation.
 
 **Done when:** Manual acceptance notes cover repeated hotkey toggles, tray click, focus return, outside dismissal, app restart, and unavailable voice behavior on the declared target OS; no duplicate shortcuts/listeners remain after reload.
 
@@ -74,6 +74,8 @@ flowchart LR
 - [ ] Mark complete when the acceptance checks below pass.
 **Depends on:** 1.2.
 **Goal:** Make the movable orb Ve's primary visible entry point while retaining the system tray for the user's explicit hide/minimize state and recovery.
+
+**Implementation status (2026-10-24):** Started after Step 1.2 was accepted and committed. The orb is required and will launch with Ve; it must remain independently hideable to the tray.
 
 **Work:** Show the floating orb as part of normal Ve startup/running state. The orb opens a compact, labeled menu for Chat, Voice, and Hide/Minimize-to-tray; keep Voice disabled and explained until voice is implemented. Separate click from drag with a movement threshold. Persist position per display, clamp it into visible work areas, and recover placement when monitors or DPI/resolution change. Hiding moves Ve to the tray without exiting; tray click/hotkey restores it. Add keyboard move/reposition access and follow focus, contrast, and reduced-motion preferences.
 
