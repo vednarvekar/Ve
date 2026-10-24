@@ -8,19 +8,19 @@ export interface OpenAppParams {
 }
 
 export const APP_ALIASES: Record<string, { win: string; mac: string; linux: string; canonicalId: string }> = {
-  chrome: { win: "chrome.exe", mac: "Google Chrome", linux: "google-chrome", canonicalId: "chrome" },
-  "google chrome": { win: "chrome.exe", mac: "Google Chrome", linux: "google-chrome", canonicalId: "chrome" },
-  firefox: { win: "firefox.exe", mac: "Firefox", linux: "firefox", canonicalId: "firefox" },
-  vscode: { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
-  "vs code": { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
-  "visual studio code": { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
-  code: { win: "code.exe", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
-  calculator: { win: "calc.exe", mac: "Calculator", linux: "gnome-calculator", canonicalId: "calculator" },
-  calc: { win: "calc.exe", mac: "Calculator", linux: "gnome-calculator", canonicalId: "calculator" },
-  notepad: { win: "notepad.exe", mac: "TextEdit", linux: "gedit", canonicalId: "notepad" },
-  terminal: { win: "wt.exe", mac: "Terminal", linux: "x-terminal-emulator", canonicalId: "terminal" },
-  explorer: { win: "explorer.exe", mac: "Finder", linux: "xdg-open", canonicalId: "explorer" },
-  "file explorer": { win: "explorer.exe", mac: "Finder", linux: "xdg-open", canonicalId: "explorer" },
+  chrome: { win: "chrome", mac: "Google Chrome", linux: "google-chrome", canonicalId: "chrome" },
+  "google chrome": { win: "chrome", mac: "Google Chrome", linux: "google-chrome", canonicalId: "chrome" },
+  firefox: { win: "firefox", mac: "Firefox", linux: "firefox", canonicalId: "firefox" },
+  vscode: { win: "code", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
+  "vs code": { win: "code", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
+  "visual studio code": { win: "code", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
+  code: { win: "code", mac: "Visual Studio Code", linux: "code", canonicalId: "vscode" },
+  calculator: { win: "calc", mac: "Calculator", linux: "gnome-calculator", canonicalId: "calculator" },
+  calc: { win: "calc", mac: "Calculator", linux: "gnome-calculator", canonicalId: "calculator" },
+  notepad: { win: "notepad", mac: "TextEdit", linux: "gedit", canonicalId: "notepad" },
+  terminal: { win: "wt", mac: "Terminal", linux: "x-terminal-emulator", canonicalId: "terminal" },
+  explorer: { win: "explorer", mac: "Finder", linux: "xdg-open", canonicalId: "explorer" },
+  "file explorer": { win: "explorer", mac: "Finder", linux: "xdg-open", canonicalId: "explorer" },
 };
 
 export class OpenAppSkill implements BaseSkill<OpenAppParams> {
@@ -59,34 +59,51 @@ export class OpenAppSkill implements BaseSkill<OpenAppParams> {
       };
     }
 
-    if (context.isWsl && (rawTarget === "chrome" || rawTarget === "google chrome")) {
-      const cmd = findWslCmd() || "cmd.exe";
-      const res = await launchDetached(cmd, ["/c", "start", "chrome"], "Google Chrome");
+    const currentOs = context.platform;
+    const isWindows = currentOs === "win32" || context.isWsl;
+
+    // 1. Windows (Native Windows or WSL) Execution
+    if (isWindows) {
+      const cmd = context.isWsl ? (findWslCmd() || "cmd.exe") : "cmd.exe";
+      // Windows 'start' command resolves registered app paths, Start Menu shortcuts, and PATH binaries
+      const res = await launchDetached(cmd, ["/c", "start", "", alias.win], params.target);
       if (res.success) {
         return {
           ...res,
           behaviorAction: `open_app:${alias.canonicalId}`,
         };
       }
-      const chromePath = findWslChrome();
-      if (chromePath) {
-        const res = await launchDetached(chromePath, [], "Google Chrome");
-        return {
-          ...res,
-          behaviorAction: `open_app:${alias.canonicalId}`,
-        };
+
+      // If in WSL and standard start failed, try candidate chrome path
+      if (context.isWsl && (rawTarget === "chrome" || rawTarget === "google chrome")) {
+        const chromePath = findWslChrome();
+        if (chromePath) {
+          const directRes = await launchDetached(chromePath, [], "Google Chrome");
+          return {
+            ...directRes,
+            behaviorAction: directRes.success ? `open_app:${alias.canonicalId}` : undefined,
+          };
+        }
       }
+
       return {
         success: false,
-        message: "Google Chrome was not found in standard Windows install paths on this WSL system.",
+        message: `Could not launch ${params.target} on Windows. Ensure it is installed on your computer.`,
       };
     }
 
-    const currentOs = context.platform;
-    const executable = currentOs === "win32" ? alias.win : currentOs === "darwin" ? "open" : alias.linux;
-    const args = currentOs === "darwin" ? ["-a", alias.mac] : rawTarget.includes("explorer") && currentOs !== "win32" ? ["."] : [];
+    // 2. macOS Execution
+    if (currentOs === "darwin") {
+      const res = await launchDetached("open", ["-a", alias.mac], params.target);
+      return {
+        ...res,
+        behaviorAction: res.success ? `open_app:${alias.canonicalId}` : undefined,
+      };
+    }
 
-    const res = await launchDetached(executable, args, params.target);
+    // 3. Linux (Native Ubuntu, Fedora, Arch, etc.) Execution
+    const args = rawTarget.includes("explorer") ? ["."] : [];
+    const res = await launchDetached(alias.linux, args, params.target);
     return {
       ...res,
       behaviorAction: res.success ? `open_app:${alias.canonicalId}` : undefined,

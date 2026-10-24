@@ -11,6 +11,7 @@ const TEST_FILES = [
   // 2. Unit Tests
   path.join(__dirname, "unit", "skills-failure.unit.test.mjs"),
   path.join(__dirname, "unit", "slm.unit.test.mjs"),
+  path.join(__dirname, "unit", "cross-platform.unit.test.mjs"),
   path.join(__dirname, "storage.test.mjs"),
   // 3. Integration Tests
   path.join(__dirname, "integration", "e2e-execution.integration.test.mjs"),

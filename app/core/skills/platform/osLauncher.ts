@@ -40,7 +40,11 @@ export function launchDetached(
     };
 
     try {
-      const child = spawn(executable, args, { detached: true, stdio: "ignore" });
+      const child = spawn(executable, args, {
+        detached: true,
+        stdio: "ignore",
+        windowsHide: true,
+      });
 
       child.once("error", (err) => {
         safeResolve({
