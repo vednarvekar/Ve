@@ -29,14 +29,9 @@ function registerRendererIpc<TArgs extends unknown[], TResult>(
 // Only one tray process may own the shortcut and popup lifecycle.
 const ownsSingleInstanceLock = app.requestSingleInstanceLock();
 let tray: Tray | null = null;
-let openRequestedDuringStartup = false;
 
 function openFromSystem(): void {
-  if (tray) {
-    showPopup(tray);
-  } else {
-    openRequestedDuringStartup = true;
-  }
+  if (tray) showPopup(tray);
 }
 
 if (!ownsSingleInstanceLock) {
@@ -60,8 +55,9 @@ if (!ownsSingleInstanceLock) {
     if (!shortcutRegistered) console.warn("Ve could not register CommandOrControl+Shift+Space.");
 
     tray = createTray(shortcutRegistered);
-    if (openRequestedDuringStartup) showPopup(tray);
-    openRequestedDuringStartup = false;
+    // Starting Ve is an explicit user action. Show its taskbar window so it
+    // remains discoverable on desktops that do not expose tray icons.
+    showPopup(tray);
   }).catch((error) => {
     console.error("Ve failed during startup:", error);
     app.quit();
