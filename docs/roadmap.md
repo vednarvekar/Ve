@@ -1,227 +1,237 @@
-# Ve — Development Roadmap
+# Ve — Delivery Roadmap
 
-**An on-device desktop assistant powered by a 10–20M parameter SLM that executes real actions and personalizes locally via federated learning.**
+This roadmap is the execution source of truth. The product/system requirement set is in [requirements.md](requirements.md); each step below implements a slice of those requirements and is scoped so a coding agent can implement, verify, mark, and hand it off. Do steps in order within a phase; start a later phase only after its listed dependencies are complete.
 
----
+## Product direction
 
-## 1. Vision & Architecture Summary
+Ve is a lightweight, local-first desktop assistant that interprets a goal, discovers relevant installed apps, user-scoped files, or online sources, and performs the task through registered capabilities. App discovery and launch must be dynamic, not a hardcoded app-name list. Internal app tasks use explicit integrations. The product should minimize cloud AI calls and resource use; online lookups must be disclosed. Ve is not an unrestricted machine-control agent: access is scoped, sensitive actions require approval, and the model cannot emit arbitrary shell commands or paths. Local personalization is later work; federated learning is an optional research direction with no current privacy guarantee.
 
-Ve brings intelligent, proactive desktop automation directly to the user's machine without sacrificing privacy or relying on centralized cloud LLMs. The platform is architected around five interconnected pillars:
+## Working agreements for roadmap steps
 
-1. **10–20M Parameter On-Device SLM Brain**: A lightweight Transformer model (INT8/INT4 quantized) running locally on CPU in $<100\text{ms}$ with $<150\text{MB}$ RAM, using grammar-constrained decoding to output strict, schema-compliant JSON command ASTs.
-2. **Structured Local Data Storage (SQLite)**: A local-only embedded relational database (`better-sqlite3`) that records privacy-sanitized user behavior, contacts, and state to power on-device training dataset generation.
-3. **Modular Skill Engine & Policy Gate**: Decoupled, schema-validated execution modules governed by a multi-tier safety gate that prevents arbitrary shell execution and mandates explicit confirmation for high-risk actions.
-4. **Desktop Automation (OS + Browser)**: Fast, non-shell OS process execution combined with Playwright-driven browser automation for complex multi-step web workflows.
-5. **Local Adaptation & Federated Learning Loop**: Continuous local LoRA/adapter weight fine-tuning on behavioral datasets, coupled with opt-in, differentially-private federated weight aggregation (FedAvg) to improve base models collaboratively without exposing raw user data.
+- A step is complete only when its acceptance checks pass, docs reflect the shipped behavior, and the step's code is committed or otherwise reviewed in the normal project workflow.
+- Preserve working behavior and public contracts unless the step explicitly changes them. Keep changes scoped to one step.
+- Do not claim a privacy, security, latency, accuracy, or platform guarantee without a reproducible check and stated test conditions.
+- When a dependency or product decision blocks implementation, record the evidence and a narrow decision request in the step; do not silently invent an infrastructure or model choice.
+- Update this file's checkbox and status notes as work advances. “Prototype” means useful local code exists but its production safeguards or evaluation are incomplete.
 
-```mermaid
-flowchart TD
-    subgraph UI ["Desktop Presentation Shell"]
-        Tray[Tray Icon & Hotkey] --> Popup[Frameless React Popup UI]
-        Popup --> IPC[Context-Isolated IPC Bridge]
-    end
+## Current state (2026-10-24)
 
-    subgraph Brain ["On-Device Brain (10-20M SLM)"]
-        IPC --> IntentRouter{Dual-Path Intent Parser}
-        IntentRouter -->|Exact Fast-Path| RuleMatcher[Deterministic Rules]
-        IntentRouter -->|Natural Language| SLM[10-20M ONNX/GGML SLM]
-        SLM --> GrammarMask[Grammar-Constrained JSON Decoder]
-        GrammarMask --> CommandAST[Validated Command AST]
-        RuleMatcher --> CommandAST
-    end
+The repository contains an Electron/React tray shell, text command UI, ONNX embedding-based intent prototype, deterministic fallback parser, a skill registry/router with app/browser/WhatsApp modules, SQLite persistence, a local action predictor, and a local FedAvg aggregation prototype. The intent model is not yet a demonstrated 10–20M generative SLM; the skill system does not yet provide the full policy/confirmation gate described in design docs; browser workflows and voice are incomplete; federated code is not connected to a network and provides neither secure aggregation nor differential privacy. See [README](../README.md) and [product definition](product.md) for the current inventory.
 
-    subgraph Governance ["Safety & Dispatch"]
-        CommandAST --> PolicyGate{Policy & Risk Gate}
-        PolicyGate -->|Low Risk| SkillRouter[Skill Router]
-        PolicyGate -->|Sensitive / High Risk| Confirm[UI Confirmation Prompt]
-        Confirm -->|User Approved| SkillRouter
-        PolicyGate -->|Ambiguous| Clarify[Clarification Dialogue]
-    end
-
-    subgraph Execution ["Execution Engine"]
-        SkillRouter --> OSBridge[Native OS Process Driver]
-        SkillRouter --> BrowserBridge[Playwright Browser Automation]
-        SkillRouter --> SysBridge[System State Driver]
-    end
-
-    subgraph StorageAndLearning ["Data & Learning Pipeline"]
-        Execution --> Sanitizer[Privacy Sanitizer Middleware]
-        Sanitizer --> SQLite[(Local SQLite Store)]
-        SQLite --> DatasetGen[Local Dataset Generator]
-        DatasetGen --> LocalTrainer[Idle On-Device LoRA Fine-Tuner]
-        LocalTrainer --> LocalAdapters[Local Personal Adapters]
-        LocalAdapters -.->|Opt-In Clipped Deltas| FedClient[Federated Aggregation Client]
-        FedClient -.->|Secure Aggregation| FedServer([Global Federated Coordinator])
-    end
-```
-
----
-
-## 2. Dependency-Ordered Milestones
+## Dependency map
 
 ```mermaid
 flowchart LR
-    M1[M1: Shell & Baseline] --> M2[M2: Skill Engine & Policy]
-    M2 --> M3[M3: Local SQLite & Dataset Gen]
-    M2 --> M4[M4: Desktop & Browser Automation]
-    M3 --> M5[M5: 10-20M SLM Brain]
-    M3 --> M6[M6: Adaptation & Federated Learning]
-    M4 --> M6
-    M5 --> M6
+  A[1. Establish truthful baseline] --> A2[1.2–1.3 Reliable shell + required floating launcher]
+  A2 --> B[2. Trust boundary and command contracts]
+  B --> C[3. Bounded workflow engine]
+  C --> D[4. Dynamic app discovery and launch]
+  C --> E[5. Scoped file discovery and opening]
+  C --> F[6. Streaming catalog lookup]
+  C --> G[7. Spotify connector]
+  C --> H[8. WhatsApp safe handoff]
+  D --> I[9. Local data governance]
+  E --> I
+  F --> I
+  G --> I
+  H --> I
+  I --> J[10. Intent quality and lightweight model decision]
+  J --> K[11. Evaluation and packaging]
+  I --> L[12. Local suggestions]
+  L --> M[13. Federated feasibility, simulated only]
 ```
 
----
+## Phase 1 — Make the current prototype trustworthy
 
-### Milestone 1: Hardened Desktop Shell & Deterministic Baseline
-**Objective**: Solidify the system tray shell, hotkey handling, frameless React window lifecycle, and secure IPC bridge with a deterministic baseline parser.
+### Step 1.1 — Establish an accurate behavior and security baseline
 
-- [x] **Frameless Tray Shell**: Electron tray integration positioning the popup adjacent to the OS taskbar/menu bar.
-- [x] **React 19 Chat UI**: Fast, responsive chat bubble feed with autogrowing text input and command history navigation.
-- [x] **Context-Isolated IPC Bridge**: Zero direct Node.js API exposure in the renderer (`contextBridge.exposeInMainWorld`).
-- [ ] **Global Shortcut Lifecycle**: Global summon/hide toggle (`Ctrl+Shift+Space` or `Cmd+Shift+Space`) with reliable focus restoration to previously active desktop applications.
-- [ ] **Sub-50ms Popup Latency**: Zero-flash popup rendering, window caching, and instant blur-dismissal behavior.
-- [ ] **Deterministic Command Fast-Path**: High-precision prefix/regex parser executing verified exact commands (`open chrome`, `search <query>`) in $<5\text{ms}$.
+- [ ] Mark complete when the acceptance checks below pass.
+**Goal:** Know what the checked-in app actually does and make its current behavior safe to describe.
 
-#### Acceptance Criteria
-1. Global hotkey toggles popup visibility and transfers keyboard focus immediately without OS window flicker.
-2. Clicking outside popup cleanly dismisses the window without process crashes or memory leaks.
-3. Zero Electron security warnings in development; `contextIsolation: true`, `nodeIntegration: false`.
-4. Exact-match commands produce instant feedback in the UI without cloud network calls.
+**Work:** Inventory the app's commands, IPC handlers, skill validation, storage fields, network calls, platform behavior, and model artifact. Correct any immediate mismatch between runtime behavior and product claims. Document known limitations and the supported development OS.
 
----
+**Done when:** README's current-status section matches the code; every command shown as supported has a traced path from UI to handler to executor; all external network calls and stored fields are listed; no design-only capability is described as shipped.
 
-### Milestone 2: Modular Skill Engine & Policy Gate
-**Objective**: Build a typed, extensible skill execution architecture governed by a strict parameter validator and a risk-based confirmation gate.
+### Step 1.2 — Make the basic tray interaction dependable
 
-- [ ] **Unified `BaseSkill` Interface**: Standardized TypeScript contracts for skill registration, metadata, argument schema, and execution lifecycle.
-- [ ] **Zod Schema Validation**: Strictly typed parameter parsing for every skill. Model and user inputs are validated against JSON schemas before execution.
-- [ ] **No Raw Shell Strings**: Complete prohibition of unbounded `exec` string concatenation; all process execution is parameterized through strict non-shell spawner APIs (`execFile`).
-- [ ] **Risk Classification & Confirmation Gate**:
-  - `Tier 0 (Read / Query)`: Safe information retrieval; executed immediately.
-  - `Tier 1 (Safe Action)`: Launching known applications, navigating to standard URLs; executed immediately with audit toast.
-  - `Tier 2 (Sensitive / Mutating)`: Modifying system settings, sending external communications; requires single-click UI confirmation.
-  - `Tier 3 (Destructive)`: File deletion, process termination, credential access; requires explicit confirmation modal with action preview.
-- [ ] **Core Skills**:
-  - `openApp`: OS-native application launch with binary lookup and fuzzy name resolution.
-  - `openUrl`: Validated URL launch in user's default browser.
-  - `webSearch`: Configurable multi-provider search query dispatch.
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 1.1.
+**Goal:** A user can summon, use, and dismiss Ve repeatedly without losing focus or getting a broken popup.
 
-#### Acceptance Criteria
-1. All model outputs are treated as untrusted proposals; invalid schema parameters are rejected with actionable user-facing errors.
-2. Actions marked `Tier 2` or `Tier 3` cannot execute without explicit confirmation from the renderer UI.
-3. Unit test coverage verifies schema rejection on malicious or malformed parameters (e.g. command injection tokens).
-4. Registering a new skill requires only defining its schema, risk tier, and executor without altering core dispatch logic.
+**Work:** Finish hotkey registration/lifecycle, popup show/hide and focus behavior, outside-click dismissal, startup/shutdown cleanup, and clear action success/failure feedback. Keep voice marked unavailable until it works end to end.
 
----
+**Done when:** Manual acceptance notes cover repeated hotkey toggles, tray click, focus return, outside dismissal, app restart, and unavailable voice behavior on the declared target OS; no duplicate shortcuts/listeners remain after reload.
 
-### Milestone 3: Structured Local Data Storage & Dataset Generation (SQLite)
-**Objective**: Transition from volatile JSON files to an encrypted, high-performance embedded SQLite database that persists history safely and compiles training datasets for SLM fine-tuning.
+### Step 1.3 — Add the required floating assistant launcher
 
-- [ ] **Embedded SQLite Engine**: Integration of `better-sqlite3` with WAL mode enabled, operating safely in the Electron main process data directory.
-- [ ] **Relational Schemas**:
-  - `preferences`: User settings, model configuration, and telemetry/learning opt-in flags.
-  - `contacts`: User-defined aliases, phone numbers, and entity mappings.
-  - `memories`: User notes and explicit persistent facts.
-  - `behavior_events`: Timestamped, sanitized logs of executed actions, context features, and outcomes.
-  - `local_model_state`: Serialized LoRA adapter tensors, layer shapes, and version hashes.
-- [ ] **PrivacySanitizer Pipeline**:
-  - Strips query strings, paths, and fragments from URLs (retaining only domain).
-  - Redacts raw search query strings and communication message bodies.
-  - Blocks storage of credentials, tokens, and password field values.
-- [ ] **Training Dataset Generator**:
-  - Automated transformation of `behavior_events` into prompt-completion pairs formatted for intent classification and next-action prediction fine-tuning.
-  - Extraction of temporal features (time band, day of week, previous action sequence) paired with verified action targets.
-- [ ] **User Data Governance UI**:
-  - Single-click database viewer in settings.
-  - Full JSON data export.
-  - Single-click zero-fill purge of all behavioral history.
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 1.2.
+**Goal:** Make the movable orb Ve's primary visible entry point while retaining the system tray for the user's explicit hide/minimize state and recovery.
 
-#### Acceptance Criteria
-1. SQLite operations complete in $<10\text{ms}$ on typical queries without blocking Electron UI event loops.
-2. Automated test suite validates that zero credentials, message contents, or private search queries leak into `behavior_events`.
-3. Dataset generator produces syntactically valid JSONL datasets compatible with fine-tuning pipelines.
-4. User clicking "Purge History" executes immediate database deletion verified by disk inspection.
+**Work:** Show the floating orb as part of normal Ve startup/running state. The orb opens a compact, labeled menu for Chat, Voice, and Hide/Minimize-to-tray; keep Voice disabled and explained until voice is implemented. Separate click from drag with a movement threshold. Persist position per display, clamp it into visible work areas, and recover placement when monitors or DPI/resolution change. Hiding moves Ve to the tray without exiting; tray click/hotkey restores it. Add keyboard move/reposition access and follow focus, contrast, and reduced-motion preferences.
 
----
+**Done when:** Manual checks cover orb visible on normal startup, click versus drag, edge clamping, multiple displays, display removal/reconnect, scaling changes, restart/position restore, hide-to-tray and restore, keyboard-only use, no accidental focus stealing, and disabled mic behavior; the tray remains available while the orb is hidden.
 
-### Milestone 4: Desktop Automation & Browser Integration
-**Objective**: Enable rich, multi-step desktop and web workflows via native OS hooks and sandboxed Playwright automation.
+## Phase 2 — Build the trust boundary and task capabilities
 
-- [ ] **Native OS Automation Driver**:
-  - Multi-platform app resolver (Windows Start Menu/App Paths, macOS `/Applications`, Linux `.desktop` entries).
-  - System controls bridge: volume adjustment, media key dispatch, display brightness, and window tiling.
-- [ ] **Playwright Browser Automation Driver**:
-  - Headless and headed automation engine managing isolated browser sessions.
-  - Complex automation workflows: targeted media search (YouTube, Netflix), content lookup, and form navigation.
-  - Isolated automation profile preventing unauthorized access to primary personal cookies unless explicitly permitted.
-- [ ] **Live Execution Stepper & Cancellation**:
-  - Real-time step progress indicator rendered in the popup UI during multi-step automation.
-  - Instant user cancellation (`Esc` or "Stop" button) aborting Playwright actions and releasing OS handles.
+### Step 2.1 — Define Ve's threat model and capability permissions
 
-#### Acceptance Criteria
-1. Application launcher reliably locates installed applications without requiring manual file path configuration.
-2. Browser automation performs multi-step searches and navigation reliably across network jitter and page load delays.
-3. User cancellation terminates automation within 200ms without leaving orphan browser processes.
-4. All automation runs with explicit timeouts preventing hung background tasks.
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 1.1.
+**Goal:** Limit what a compromised renderer, malicious model output, hostile webpage, or compromised host can make Ve do.
 
----
+**Work:** Document assets and threats: local files, contacts, messages, app sessions, and user identity. Define capability-based permissions, IPC sender validation, main-process enforcement, consent boundaries, data-flow limits, and confirmation requirements. Explicitly prohibit arbitrary shell/PowerShell, admin elevation, broad filesystem crawling, unprompted credential access, and model-selected paths. Treat web content, app metadata, and model output as untrusted input. Note that a compromised host cannot be made foolproof; minimize Ve's additional access and blast radius.
 
-### Milestone 5: 10–20M Parameter On-Device SLM Brain Subsystem
-**Objective**: Deploy a compact, CPU-optimized 10–20M parameter language model on-device to parse freeform natural language into structured skill schemas with zero cloud reliance.
+**Done when:** A threat model maps each capability to least-privilege access and abuse cases; every privileged operation has a main-process policy; no renderer/model input can directly invoke a generic command or filesystem API; the security limits are documented without claiming perfect protection.
 
-- [ ] **Micro-Architecture Selection & Model Distillation**:
-  - 10M–25M parameter Transformer (compact Encoder-Decoder or Micro-Decoder e.g., SmolLM/TinyBERT/custom distilled seq2seq).
-  - Quantized to INT8 or INT4 format for $<25\text{MB}$ disk size and $<150\text{MB}$ active memory footprint.
-- [ ] **On-Device Inference Engine**:
-  - Embedded `onnxruntime-node` or GGML/`llama.cpp` bindings leveraging CPU vectorization (AVX2, AVX-512, ARM NEON).
-  - Sub-100ms P95 latency for intent extraction on standard commodity laptop CPUs.
-- [ ] **Grammar-Constrained Decoding**:
-  - BNF / JSON schema-guided token masking during decoding to guarantee 100% syntactically valid command output matching registered skill schemas.
-  - Zero output hallucinations or unparsable text blobs.
-- [ ] **Dual-Path Intent Routing & Ambiguity Resolution**:
-  - Intent confidence score calculation:
-    - Confidence $\ge 0.85$: Direct dispatch to Policy Gate.
-    - $0.50 \le \text{Confidence} < 0.85$: Interactive clarification prompt in chat.
-    - Confidence $< 0.50$: Graceful fallback with suggested command syntax.
+### Step 2.2 — Define command, result, and confirmation contracts
 
-#### Acceptance Criteria
-1. Cold start inference initialization completes in $<500\text{ms}$; warm inference latency stays under 100ms on CPU.
-2. Active runtime memory consumption remains below 150MB.
-3. Grammar constraint ensures zero malformed JSON syntax errors across a 1,000-utterance test benchmark.
-4. Low-confidence queries trigger clarification dialogues instead of erroneous executions.
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.1.
+**Goal:** Parser, IPC, router, UI, and skills agree on typed actions and policy-controlled outcomes.
 
----
+**Work:** Reconcile the IPC and intent-schema docs with real TypeScript contracts. Define versioned capability IDs, validated params, progress/cancellation, clarification, and structured results. Enforce risk in the main process. Create expiring, one-use confirmations that display exact resource, recipient, and side effect; never trust risk supplied by renderer or model.
 
-### Milestone 6: On-Device Personalization & Federated Learning Loop
-**Objective**: Personalize the assistant to individual user workflows locally, and enable an opt-in federated learning loop that trains collective intelligence without transmitting raw data.
+**Done when:** Every capability uses one validated contract across the boundary; malformed and unknown fields fail closed; forged, expired, replayed, rejected, and canceled confirmations never execute; all outcomes are reported clearly.
 
-- [ ] **Local Adaptation (LoRA / Adapter Heads)**:
-  - Frozen base model weights with a lightweight, trainable adapter layer (~200K parameters).
-  - Background fine-tuning on local `behavior_events` executed strictly during device idle states and when connected to AC power.
-  - Adapts to user-specific phrasing, aliases, and routine task patterns.
-- [ ] **Contextual Next-Action Predictor**:
-  - Suggestion engine combining temporal context (time of day, previous action) with personalized adapter logits.
-  - Strict confidence gating ($>0.90$) for proactive suggestions.
-  - Single-click or hotkey acceptance / dismissal with feedback loop recording.
-- [ ] **Federated Aggregation Client**:
-  - Round-based protocol client: downloads candidate global model, computes local weight updates.
-  - Weight update clipping (L2 norm) and Differential Privacy (DP) Gaussian noise addition.
-  - Secure Aggregation payload generation containing encrypted weight shares without device identifiers.
-- [ ] **Coordinator & Evaluation Harness**:
-  - Reference server implementation aggregating updates using FedAvg across simulated multi-client cohorts.
-  - Model verification suite evaluating candidate aggregated models against non-sensitive benchmarks before sign-off.
+### Step 2.3 — Build the bounded task workflow engine
 
-#### Acceptance Criteria
-1. On-device fine-tuning runs in background worker thread consuming $<10\%$ CPU without interrupting UI responsiveness.
-2. Proactive suggestions achieve $>80\%$ user acceptance rate with $<5\%$ dismissals under high-confidence gating.
-3. Network traffic inspection confirms zero raw text, queries, or user identifiers leave the client during federated rounds.
-4. Simulated federated learning benchmarks demonstrate convergence and utility improvements over isolated cold-start models.
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.2.
+**Goal:** Turn a validated user goal into visible, cancellable, and verifiable steps without letting the model run an open-ended agent loop.
 
----
+**Work:** Implement a workflow state machine/DAG over registered capabilities. Define preconditions, output contracts, timeout/cancellation, bounded retries, idempotency for side effects, progress events, partial failure, and recovery. The model may propose a task plan, but deterministic orchestration validates it and advances only through approved steps. Re-check outcomes after each action; never automatically replay a send/share operation.
 
-## 3. Immediate Next Steps & Priority Queue
+**Done when:** A multi-step local demo can plan, execute, report each step, cancel, and recover from a failed step; repeated or malformed model plans cannot exceed registered capabilities, step/time budgets, or user authorization; side effects are not repeated after uncertain outcomes.
 
-1. **Complete Milestone 1 Shell Hardening**: Wire global shortcut registration and refine popup window focus restoration.
-2. **Implement Milestone 2 BaseSkill & Schema Router**: Port existing skills (`openApp`, `openUrl`, `webSearch`) into the typed `BaseSkill` registry with Zod validation.
-3. **Establish Milestone 3 SQLite Persistence**: Set up `better-sqlite3` and implement `PrivacySanitizer` middleware for event logging.
-4. **SLM Prototype**: Benchmark 14M–20M distilled models in ONNX Runtime for intent extraction latency and accuracy.
+### Step 2.4 — Discover and launch installed apps dynamically
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.2 and 2.3.
+**Goal:** Users can launch apps installed on their system without Ve hardcoding each app name in its intent logic.
+
+**Work:** Implement an OS-specific installed-app catalog using OS metadata and a safe launcher. Normalize aliases/search at runtime, display ambiguous matches, validate resolved executable identity and catalog provenance, and launch without shell interpolation. Treat user-writable or unknown app entries as untrusted and require deliberate user selection/confirmation. Keep platform discovery adapters separate from the shared command planner. Do not imply that generic launch grants permission to automate an app internally.
+
+**Done when:** Acceptance notes demonstrate discovery and launch of apps not listed in Ve source; ambiguous or spoofed entries do not execute silently; missing apps and unsupported OS behavior return clear choices/errors; no arbitrary path or command string can be launched from model output.
+
+### Step 2.5 — Find and open user-scoped files
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.1–2.3.
+**Goal:** Ve can find and open a requested image or document without acquiring unrestricted access to the filesystem.
+
+**Work:** Define user-approved roots (initially standard folders such as Downloads/Documents or a native file picker). Search filenames/metadata first; make content indexing a separate explicit choice. Return candidate paths for user selection when ambiguous, then open through the OS association API. Protect against traversal, symlinks escaping approved roots, stale paths, and unsafe file types. Keep file bytes out of logs and model prompts unless the user explicitly requests an operation that needs them.
+
+**Done when:** It finds a named PDF/image only inside approved scope, lets the user choose among matches, opens the selected file, and refuses access outside scope; revoke/disable controls exist; logs contain no document contents or sensitive path data.
+
+### Step 2.6 — Add online streaming availability lookup
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.2–2.4.
+**Goal:** Find where a requested show or movie is currently available, then open a verified provider destination when possible.
+
+**Work:** Separate local intent parsing from optional online lookup. Disclose when a query leaves the device; evaluate TMDB/JustWatch for country-specific provider availability, attribution, commercial terms, freshness, and missing deep links. Show the provider/title/source and fall back to a provider search page when an exact destination is unavailable. Keep the provider behind an interface so it can be replaced. Never scrape secrets or reuse browser credentials.
+
+**Done when:** Cases cover title not found, ambiguous titles, multiple providers, market mismatch, unavailable service, missing deep link, stale data, and network failure; UI shows provider/source and lookup date; attribution/license requirements are met; core parsing and app launch still work offline; no false claim of universal app control.
+
+### Step 2.7 — Add the Spotify connector feasibility slice
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.2–2.4.
+**Goal:** Let a user request Spotify music without making Spotify API access a hidden requirement.
+
+**Work:** First implement/verify dynamic app discovery and opening a Spotify URI/search destination. Separately prototype the Web API path with OAuth Authorization Code + PKCE and minimal scopes. Confirm the user's authorization, Premium eligibility, active playback device, current Development Mode requirements and quota, product terms, and Spotify's prohibition on using its content for model training. Do not copy catalog/content into learning data. Provide a no-API/manual fallback if authorization or account eligibility is absent.
+
+**Done when:** App/URI fallback works without Spotify API credentials; API playback is attempted only with valid user consent, eligible account/device, supported scope and current developer access; expired tokens, no active device, 403/429 and network failures give clear outcomes; Ve does not use Spotify data for model training or imply an API path is available to every user.
+
+### Step 2.8 — Prepare WhatsApp file sharing with a safe user handoff
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.2, 2.3, 2.5.
+**Goal:** Help the user prepare a file share without claiming unsupported automation of a personal WhatsApp account.
+
+**Work:** Resolve the contact and exact file using approved local data. WhatsApp click-to-chat can open a conversation and prefill text but does not attach a local file; WhatsApp Desktop supports the user manually selecting and sending an attachment. Provide a clear handoff that opens the official chat where supported and guides the user to attach/review/send. Do not automate browser internals, reverse engineer WhatsApp, or send on a personal account unless an officially supported and terms-compliant interface is verified. Treat WhatsApp Business Platform separately: it is for business/customer messaging, requires business onboarding, policy-compliant templates/windows and may incur fees; do not use it as a workaround for personal messaging.
+
+**Done when:** UI presents exact contact and file before handing off; opening the chat does not send; the user performs the final attach/send action in WhatsApp; cancellation leaves no outgoing message; logs omit file contents and message body; automatic personal-account sending remains disabled absent a verified official integration.
+
+## Phase 3 — Make local data controls real
+
+### Step 3.1 — Specify stored data and retention
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 1.1.
+**Goal:** Align the storage implementation and privacy docs around the actual data lifecycle.
+
+**Work:** Reconcile `docs/system-design/03-local-store-schema.md` with SQLite tables and sanitizer behavior. Decide which command text is retained for local training, how it is protected, event retention, export semantics, purge semantics, and whether database encryption is actually in scope. Do not call SQLite encrypted unless encryption is implemented and verified.
+
+**Done when:** A field-by-field data inventory identifies purpose, sensitivity, retention, and deletion behavior; the UI wording matches it; docs distinguish local storage from any future network transfer.
+
+### Step 3.2 — Finish user data controls
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 3.1.
+**Goal:** Users can inspect, export, pause, and erase the data used by personalization.
+
+**Work:** Implement and expose the agreed export and erase controls, learning opt-in/off switch, bounded retention, and migration recovery. Ensure clearing behavior resets derived local model state but preserves separately managed contacts/notes as documented.
+
+**Done when:** UI flows and manual checks demonstrate export contents, opt-out behavior, retention pruning, migration safety, and complete deletion of the selected data; no hidden learning continues after opt-out.
+
+## Phase 4 — Improve understanding with evidence
+
+### Step 4.1 — Define a command benchmark and confidence behavior
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.2–2.8 and 3.1.
+**Goal:** Measure whether Ve understands supported requests and selects the right local resource/integration before investing in a larger model.
+
+**Work:** Create a versioned, privacy-safe set of synthetic/consented requests for app launch, scoped file search, online content lookup, integrations, confirmation and cancellation, paraphrases, ambiguity, unsupported requests, and adversarial inputs. Compare deterministic rules and the current ONNX embedding prototype. Calibrate confidence against errors; clarification must win over unsafe guessing.
+
+**Done when:** Results report per-intent accuracy, slot accuracy, ambiguity handling, false-execution cases, latency, and hardware/runtime conditions; benchmark can be rerun locally; unsupported commands never route to an unrelated skill.
+
+### Step 4.2 — Decide the intent model based on benchmark results
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 4.1.
+**Goal:** Choose the smallest dependable approach for Ve's bounded command vocabulary.
+
+**Work:** Compare deterministic rules, compact classifiers/slot taggers, task-tuned small models, and larger local candidates against the same end-to-end benchmark. Use local models for language ambiguity and typed plan proposals; use OS catalogs, search/providers, deterministic orchestration, and focused connectors for facts and actions. Do not assume a 10–20M model can replace a frontier model or serve as the sole planner. Do not add cloud AI calls to the default flow. Record model/artifact provenance, license, task success and wrong-action rates, memory, cold/warm latency, CPU/battery cost, and behavior on low-spec target hardware.
+
+**Done when:** A decision record assigns each task to rules, local model, retrieval/provider, or integration; selects a model only where it improves end-to-end success within the agreed resource budget; defines clarification/escalation behavior; and records release thresholds. If a request needs unsupported reasoning or integration, Ve clarifies or reports the limit instead of guessing. Any future optional remote model path is a separate opt-in decision with data/cost disclosure.
+
+## Phase 5 — Deliver personalization without overclaiming
+
+### Step 5.1 — Validate local prediction utility
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 3.2, 4.1.
+**Goal:** Determine whether the local action predictor makes useful suggestions for one user.
+
+**Work:** Define offline evaluation and minimum-data rules; separate predictive confidence from softmax scores; record suggestion accept/dismiss feedback with consent; ensure only eligible low-risk actions can be suggested.
+
+**Done when:** Evaluation reports top-k usefulness, calibration, acceptance, dismissal, and no-data behavior; suggestion UI is opt-in, dismissible, and never auto-executes; delete/opt-out controls cover events and model state.
+
+### Step 5.2 — Explore federated learning in simulation only
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 5.1.
+**Goal:** Test whether cross-device aggregation adds measurable value before designing a service.
+
+**Work:** Use synthetic clients and the narrow next-action model. Specify threat model, secure aggregation protocol, cohort behavior, differential privacy accountant, poisoning defenses, artifact signing, and update compatibility. Correct the existing prototype/docs so clipping, noise, and secure aggregation claims match the implementation. Do not use real user data or transmit updates in this step.
+
+**Done when:** Reproducible simulation compares local-only and federated utility; privacy parameters and limitations are documented; protocol review identifies implementation gaps. Networked federation remains a separate decision and roadmap step requiring a concrete service/security design.
+
+## Phase 6 — Release readiness
+
+### Step 6.1 — Stabilize supported platform and packaging
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 2.3–2.8, 3.2, 4.2.
+**Goal:** Make the supported build installable and recoverable on its declared OS.
+
+**Work:** Set target OS scope; package native dependencies/model assets; define upgrades, rollback, logs, and crash recovery; document permissions, offline behavior, and model downloads if any.
+
+**Done when:** A clean-machine install/uninstall/upgrade walkthrough succeeds on the supported OS; app works offline for core commands; artifact sizes and startup/resource use are measured; known limitations are in release docs.
+
+## Deferred / explicitly out of current scope
+
+Voice input, broad system controls, arbitrary browser workflows, community skills, startup suggestions, cloud intent parsing with real user commands, and production federated infrastructure stay deferred until the relevant earlier phases pass. Messaging is a high-impact integration and should remain narrowly scoped with explicit confirmation and platform/terms review.

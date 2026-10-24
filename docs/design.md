@@ -58,11 +58,22 @@ Ve should feel like it belongs to Windows, not like a third-party app bolted on.
 - Popup max height: ~500px before scrolling kicks in on chat history
 - Corner radius: 8px on popup container, 12px on chat bubbles (matches Windows 11's rounded-corner language)
 - Padding: 12px internal padding standard, 8px between chat bubbles
-- Position: anchored bottom-right, adjacent to system tray, same as native flyouts
+- Chat panel from the tray: anchored near the tray, like a native flyout.
+- Chat panel from the floating launcher: positioned next to the launcher and flipped as needed to stay on-screen.
+
+### Floating launcher mode
+- The floating launcher is Ve's primary visible entry point while the app is running. The system tray remains the background/minimized state and recovery route.
+- Use a compact, recognizable Ve mark (about 44–48 px as an initial design target) that stays legible over light and dark desktop backgrounds. Keep the surface quiet and visually light.
+- Place the orb at a user-selected point, persist its display-relative placement, and clamp it to the current usable display bounds. If the display disappears or changes scale, restore it to a visible edge.
+- A click opens a small menu with icon plus label for **Chat**, **Voice**, and **Hide to tray**. A drag moves the orb; movement past a small threshold cancels the click. The panel opens toward available screen space. Hiding the orb keeps Ve running in the tray; tray click or hotkey restores it.
+- Show hover/focus treatment without pulsing or drawing attention. Do not steal keyboard focus just because the orb is visible.
+- Keep the microphone action visibly unavailable until voice works. Never show a fake active/listening state.
 
 ## 6. Iconography
 - Tray icon: simple, monochrome-adaptable glyph (must read clearly at 16x16px tray size) — avoid detailed illustration, it won't survive scaling down
+- Floating launcher: simplified Ve brand mark that remains recognizable at small sizes and has adequate contrast on arbitrary desktop backgrounds
 - Mic icon: standard filled mic glyph; changes to an animated "listening" state (pulsing accent-colored ring) when active
+- Chat action: simple chat bubble glyph; Hide-to-tray action: minimize/chevron glyph. Use icon plus accessible text label in the menu.
 - Send button: simple arrow or paper-plane glyph, accent-colored
 - Use **Segoe Fluent Icons** font/glyph set where possible for native consistency, rather than a custom icon library
 
@@ -83,4 +94,6 @@ Ve should feel like it belongs to Windows, not like a third-party app bolted on.
 ## 9. Accessibility Notes
 - Maintain WCAG AA contrast minimum for text against backgrounds in both themes (values above were chosen to clear this, but verify against final rendering)
 - All interactive elements (mic, send, dismiss) need visible focus states for keyboard navigation
+- Floating launcher actions need accessible names, keyboard activation and repositioning, and a way to reach all actions without dragging
+- Respect system reduce-motion and high-contrast settings; don't rely on hover or color alone to distinguish disabled voice from active voice
 - Respect system font-size scaling settings rather than hardcoding pixel values where the framework allows

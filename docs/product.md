@@ -2,15 +2,15 @@
 
 ## One-liner
 
-A personal desktop assistant powered by a tiny on-device language model (~10–20M parameters) that understands natural language, executes real actions on your computer, and learns your habits locally — without ever sending your data to a server.
+A local-first desktop assistant that interprets natural-language requests, safely executes a bounded set of computer actions, and may later personalize suggestions from local behavior. A compact on-device model is a hypothesis to validate, not a shipped product capability.
 
 ## Vision
 
-Ve is Jarvis for your desktop — built small, private, and personal.
+Ve is a local-first desktop assistant that understands a user's request, finds the relevant app, website, or user file, and carries out the task with minimal delay and resource use. The Jarvis comparison describes the feel of the experience; the product is built in deliberate capability layers, starting with dependable everyday tasks and expanding safely.
 
-Instead of relying on massive cloud LLMs, Ve runs a compact language model (10–20 million parameters) entirely on-device. This model is small enough to run on any modern machine without a GPU, yet capable enough to understand freeform natural language commands and map them to desktop actions. Over time, Ve observes how you work — which apps you open, when you open them, what you search for — and trains itself locally to anticipate what you need next.
+The intent is to avoid per-command AI service costs by doing command understanding and task planning locally on modest hardware. Deterministic methods should handle simple, known operations; a compact on-device model should be used only if it improves understanding without imposing heavy CPU, memory, or battery costs. The repository currently contains an ONNX embedding-based intent prototype, not a proven general task model. Over time, users may opt into local behavior learning for personalization, with clear inspection, pause, and deletion controls.
 
-The long-term differentiator is **federated learning**: users who opt in contribute encrypted model weight updates (never raw data) to a shared training pool, so every Ve instance gets smarter from collective patterns while every user's actual behavior stays on their own machine.
+Federated learning is a research direction, not a current product guarantee. The local FedAvg prototype is not connected to a network and does not implement secure aggregation or differential privacy. Any future network protocol needs a reviewed privacy design and measured utility before using real user data.
 
 ## Core idea
 
@@ -25,68 +25,65 @@ You say something natural  →  Small on-device model understands it
 ## What Ve does
 
 ### Understand natural language input
-A user types or speaks a command in natural, unstructured language. Ve's on-device SLM parses intent — no cloud call, no latency, no data leaving the machine.
+A user types a command in natural language. The current prototype combines ONNX embedding-based intent matching with deterministic fallback rules; quality and confidence calibration still need measurement. Voice and a production SLM are future work.
 
-**Examples:**
-- "open chrome and go to youtube"
-- "search for flights to goa next week"
-- "send a whatsapp message to mom"
-- "play some lofi on spotify"
-- "close all browser tabs and open my coding setup"
+**Example goals (planned end-to-end workflows):**
+- "Open The Mentalist" → find a supported streaming source, such as Netflix, and open the title.
+- "Play music on Spotify" → open the installed Spotify app or supported Spotify integration.
+- "Open the PDF from my downloads" → find a matching file in an allowed folder and open it with the system's associated app.
+- "Send this file to Ved on WhatsApp" → identify the selected file and contact, show both, then prepare an official chat handoff for the user to attach/review/send. Automatic personal-account sending depends on a supported integration and is not assumed.
 
-### Execute real desktop actions
-Ve doesn't just answer questions — it acts. It can launch apps, open URLs, automate browser workflows, manage windows, trigger system commands, and orchestrate multi-step tasks across applications.
+### Understand a goal and carry it out
+Ve should interpret a goal, discover relevant resources on the user's system or the web, select a safe route, perform the requested steps, and report what happened. Examples include “open the Mentalist” (find a legal streaming source such as Netflix, then open the title there), “play music on Spotify,” “open the PDF from my downloads,” or “send this file to Ved on WhatsApp.” These are product examples, not claims that the current prototype supports them end to end.
 
-**Action categories:**
-- **App control** — launch, close, switch between, and arrange applications
-- **Browser automation** — navigate, search, fill forms, extract information
-- **System operations** — volume, brightness, wifi, bluetooth, power, files
-- **Communication** — send messages via WhatsApp Web, compose emails
-- **Workflow chains** — multi-step sequences triggered by a single command
-- **Custom skills** — user-defined or community-contributed action modules
+**Capability layers:**
+- **Discover and open** — find installed apps dynamically through OS app catalogs; open websites, user-selected files, and supported document types without maintaining a hardcoded app list.
+- **Find and choose** — search permitted local folders for a requested file, or use an explicitly disclosed online lookup to find where a title is available.
+- **Perform app tasks** — use supported OS protocols and focused app/site adapters for tasks such as playing a track on Spotify or opening a show on a streaming service. An installed app can be launched generically; performing its internal tasks may need a supported integration.
+- **Transfer and communicate** — prepare a selected file or message through supported integrations, show the exact recipient and payload, and require user approval; use a manual handoff where the service has no supported personal-account send API.
+- **Grow carefully** — add system controls and multi-step workflows only with scoped permissions, progress visibility, cancellation, and clear confirmation for side effects.
+
+Ve should not rely on a fixed list of app names in core intent logic. It may maintain generic platform adapters and user-installable integrations, but app discovery and launching should be based on the operating system's installed-app inventory.
+
+### Security and trust boundary
+Ve must not become a general-purpose remote-control backdoor. Treat user text, model output, web content, files, app metadata, and IPC requests as untrusted. The model may propose only registered capabilities; it must never produce shell commands or choose arbitrary paths to read. Use least-privilege file access, scoped app integrations, validated IPC, and main-process policy enforcement. Ask before sensitive actions and show the exact recipient and file before sharing. Avoid broad filesystem crawling, credential stores, admin access, and silent external transfers. A compromised account or host cannot be made “foolproof”; the design should limit what Ve can access and make abuse harder to turn into data theft or destructive actions.
 
 ### Learn and personalize on-device
-Every successful interaction teaches Ve about the user. The on-device model continuously fine-tunes itself based on:
+If the user enables learning, eligible interactions can help Ve personalize over time. The product must not silently train on every interaction. Candidate signals include:
 
 - **Usage patterns** — what apps you use, when, and in what order
 - **Command preferences** — how you phrase things, your vocabulary and shortcuts
 - **Context signals** — time of day, day of week, previous action, active window
 - **Feedback loops** — accepted vs. dismissed suggestions, corrected commands
 
-All learning data stays local. The user can inspect, export, pause, or delete it at any time.
+Learning data should stay local. The user must be able to inspect, export, pause, or delete it.
 
 ### Proactive suggestions
 Once Ve has enough local data, it can suggest actions before you ask — like a startup suggestion ("Open VS Code? You usually do at this time") or a follow-up ("You just opened Chrome — want to go to GitHub?"). Suggestions only appear above a confidence threshold and are always dismissable.
 
-### Federated learning (long-term)
-Users who opt in contribute to a federated training process:
-- Each device trains locally on its own behavioral data
-- Only encrypted, clipped, differentially-private model weight updates are sent
-- A coordinator aggregates updates from a minimum cohort
-- A better global model is signed and distributed back to all participants
-- Raw commands, URLs, app names, transcripts — never leave the device
-
-The assistant remains fully functional with federation disabled.
+### Federated learning (research direction)
+The current local FedAvg function is an algorithm prototype only. A future opt-in design would need secure aggregation, a documented differential privacy budget, cohort protections, signed artifacts, and a privacy/security review before any real updates are transmitted. No federated server or networked client currently exists. Ve must remain useful with federation disabled.
 
 ## The SLM — why small matters
 
 | Property | Ve's approach |
 |---|---|
-| **Model size** | 10–20M parameters — fits in RAM on any modern laptop |
-| **Inference** | CPU-only, sub-100ms latency, no GPU required |
-| **Privacy** | Runs entirely on-device — no cloud dependency for core function |
-| **Personalization** | Continuously fine-tunes locally on user behavior |
-| **Bandwidth** | Zero for daily use; minimal for optional federated updates |
-| **Scope** | Not a general chatbot — purpose-built for intent parsing + action prediction |
+| **Model size** | Compact model is a target to evaluate against a deterministic/classifier baseline |
+| **Inference** | Measure CPU latency and memory on declared hardware before setting release targets |
+| **Privacy** | Core path should work locally; explicitly disclose any future networked feature |
+| **Personalization** | Local action predictor prototype; utility and controls need validation |
+| **Bandwidth** | No federated network traffic exists in the current app |
+| **Scope** | Task-oriented assistant that discovers local resources and invokes scoped capabilities |
 
-The model is not trying to be GPT. It's a focused intent-understanding and action-prediction model trained for a constrained task: turn natural language into structured desktop commands. A 10–20M parameter model can do this well because the output space (action categories + parameters) is bounded.
+The model is not trying to be GPT. The product question is whether a compact classifier or language model can improve a bounded command set over deterministic rules. A 10–20M parameter target and associated performance claims remain hypotheses until benchmarked on supported hardware.
 
 **Model responsibilities:**
 1. **Intent parsing** — "open chrome" → `{ skill: "openApp", params: { target: "chrome" } }`
 2. **Entity extraction** — "message mom on whatsapp" → `{ contact: "mom", app: "whatsapp" }`
-3. **Ambiguity resolution** — detect when a command is unclear and ask for clarification
-4. **Action prediction** — given context (time, recent actions), predict likely next actions
-5. **Personalized language adaptation** — learn the user's phrasing patterns over time
+3. **Resource discovery** — find installed apps and scoped local files, or disclosed online sources
+4. **Ambiguity and risk handling** — clarify uncertain targets and request approval for sensitive actions
+5. **Task planning** — turn a goal into visible, cancellable steps using registered capabilities
+6. **Optional personalization** — learn user preferences locally over time
 
 ## Who it's for
 
@@ -102,11 +99,11 @@ The model is not trying to be GPT. It's a focused intent-understanding and actio
 ## Product principles
 
 1. **Act, don't chat** — Ve's job is to execute tasks, not hold conversations. Every interaction should end in an action or a clear reason why it can't.
-2. **Tiny and fast** — sub-100ms response on CPU. No loading spinners, no "thinking..." delays for common commands.
-3. **Local by default** — all data, all inference, all learning happens on-device unless the user explicitly opts into federation.
+2. **Lightweight by default** — avoid requiring a GPU or constant cloud inference; measure CPU, memory, battery, and latency on target systems.
+3. **Local by default** — intent understanding and local file/app discovery stay on-device; disclose online lookups and require approval for sensitive external actions.
 4. **Learn by doing** — every interaction makes Ve smarter for that specific user. No manual configuration or training required.
 5. **Transparent uncertainty** — when Ve isn't sure, it asks. It never guesses and executes a wrong action.
-6. **Modular skills** — new capabilities are self-contained skill modules. Adding "control Spotify" doesn't require touching the core.
+6. **Modular capabilities** — app-specific tasks use scoped integrations; discovering and launching installed apps should not require hardcoding every app into the intent parser.
 7. **Calm intelligence** — proactive suggestions only when confidence is high. Wrong suggestions destroy trust faster than no suggestions.
 
 ## Tech stack
@@ -115,46 +112,52 @@ The model is not trying to be GPT. It's a focused intent-understanding and actio
 |---|---|---|
 | **Shell** | Electron (Node.js/TypeScript) | System tray app with frameless popup UI |
 | **UI** | React + Tailwind CSS | Chat interface, suggestions, confirmations |
-| **SLM runtime** | TBD (ONNX Runtime / llama.cpp / custom) | On-device inference for the 10–20M param model |
-| **Intent parsing** | On-device SLM + deterministic fallback | Model parses natural language; rules handle known patterns |
+| **Intent runtime** | ONNX Runtime (current prototype) | Embedding-based intent matching; not a validated generative SLM |
+| **Intent parsing** | Local prototype + deterministic fallback | Benchmark and confidence calibration remain roadmap work |
 | **Desktop automation** | OS APIs + Playwright (browser) | App launch, system control, browser automation |
-| **Local storage** | JSON file (current) → SQLite (planned) | Behavioral events, user data, model weights |
+| **Local storage** | SQLite via Node `node:sqlite` (current prototype) | Behavior context, contacts, notes, and local prediction state |
 | **Voice** | Local speech-to-text (planned) | Offline voice input feeding into the same pipeline |
-| **Federated learning** | Custom FL protocol | FedAvg prototype exists; secure aggregation planned |
+| **Federated learning** | Research direction | Local FedAvg prototype only; no secure aggregation, DP, coordinator, or network client |
 
 ## Current state
 
 The current implementation has:
 - ✅ Electron tray app with frameless chat popup
 - ✅ React chat UI with text input
-- ✅ Deterministic command parsing (app launch, URL open, web search)
-- ✅ On-device softmax predictor for action prediction
-- ✅ FedAvg aggregation prototype (not connected to network)
-- ✅ Local behavioral data storage with user controls
+- ⬜ Required primary floating launcher with Chat / Voice / Hide-to-tray actions
+- ✅ Deterministic fallback and ONNX embedding-based intent prototype (not benchmarked as an SLM)
+- ✅ Skill registry/router and app, browser, and WhatsApp modules (policy coverage is incomplete)
+- ✅ Local softmax action predictor and FedAvg primitive (the latter is not networked)
+- ✅ SQLite storage, privacy sanitizer, behavior context, and user-managed contacts/notes
 - ✅ User-managed contacts and notes
-- ⬜ On-device SLM for natural language understanding
-- ⬜ Skill router and policy gate
+- ⬜ Complete main-process policy gate and confirmation lifecycle
+- ⬜ Dynamic installed-app discovery and launch without a hardcoded app catalog
+- ⬜ User-scoped file search and safe open for PDFs/images
+- ⬜ Online availability lookup and focused Spotify/streaming integrations
+- ⬜ Confirmed file attachment and WhatsApp send flow
+- ⬜ Validated intent quality, confidence calibration, and supported-platform behavior
 - ⬜ Browser automation
 - ⬜ Voice input
 - ⬜ System-level controls (volume, brightness, etc.)
-- ⬜ Federated learning server and secure aggregation
+- ⬜ User-facing data export, retention, and full learning controls
+- ⬜ Federated server, secure aggregation, and differential privacy
 - ⬜ Packaging and distribution
 
-See [`roadmap.md`](./roadmap.md) for implementation milestones and delivery status.
+See [`requirements.md`](./requirements.md) for the full capability and security requirements and [`roadmap.md`](./roadmap.md) for ordered implementation steps and delivery status.
 
 ## What success looks like
 
-1. **A user says something natural and Ve does it** — no special syntax, no memorizing commands. The on-device model handles the interpretation.
-2. **It's instant** — common actions complete in under 200ms end-to-end.
-3. **It gets smarter** — after a week of use, Ve predicts your morning routine, your post-lunch workflow, your common searches.
-4. **Your data stays yours** — everything runs locally. A user can air-gap their machine and Ve still works perfectly.
-5. **Skills are pluggable** — adding a new capability is writing a module with an input schema and an executor, not rewriting the assistant.
-6. **Federation actually improves the model** — in simulation, the federated global model outperforms any single-device model, without requiring raw behavioral data.
+1. **Reliable actions:** Supported requests map to the correct validated skill; ambiguous or unsupported requests do not execute.
+2. **Responsive interaction:** Measure end-to-end latency on declared hardware and set targets from results.
+3. **Useful personalization:** Enable suggestions only after opt-in evaluation shows utility and acceptable false-positive rates.
+4. **User control:** Users can understand, pause, export, and delete data used for learning.
+5. **Extensible skills:** New capabilities use shared validation and policy.
+6. **Federation evidence:** Consider networking only after simulation shows utility and a privacy protocol is reviewed.
 
 ## Open decisions
 
-- SLM architecture and training approach (distillation from large model? train from scratch on intent data?)
-- Runtime for on-device inference (ONNX Runtime, llama.cpp, TF Lite, or custom?)
+- Whether a compact SLM is needed after benchmarking simpler approaches
+- Model/runtime choice and acceptable accuracy, latency, and memory thresholds
 - Voice STT engine (Whisper.cpp? Vosk? other local options?)
 - Target OS scope — Windows-first, but is Linux a dev convenience or a product target?
 - Federation coordinator infrastructure and secure aggregation mechanism

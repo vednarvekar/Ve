@@ -2,7 +2,7 @@
 
 ## 1. Overview & Storage Strategy
 
-Ve uses an encrypted, local-only embedded relational store (SQLite via `better-sqlite3` or secure JSON store transitioning to SQLite) residing in the OS application data directory (`app.getPath("userData")`).
+This document proposes a local embedded relational schema. The current implementation uses Node's built-in `node:sqlite` in the application data directory; it does not establish database encryption. Treat the schema and controls below as design targets until checked against the implementation and roadmap.
 
 ### Key Rules
 - **Rule 1 (Zero Cloud Sync by Default)**: The database is strictly isolated to the host file system.
