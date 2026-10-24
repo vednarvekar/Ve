@@ -1,5 +1,7 @@
 # LLD: Local Data Store & Persistence Schema
 
+> **Implementation status:** This is a proposed schema/design document. The app currently uses SQLite, but it is not encrypted. Automatic behavior-sample collection from normal commands is disabled pending explicit opt-in and data controls. Existing samples from earlier builds may remain in a user's database.
+
 ## 1. Overview & Storage Strategy
 
 This document proposes a local embedded relational schema. The current implementation uses Node's built-in `node:sqlite` in the application data directory; it does not establish database encryption. Treat the schema and controls below as design targets until checked against the implementation and roadmap.

@@ -21,7 +21,7 @@
 ## Privacy & Data Rules
 
 **Do**
-- Keep raw logs (app usage, command history) local by default (SQLite on-device).
+- Keep behavior logging disabled until the user opts in; when enabled, keep logs local by default (SQLite on-device) and disclose the fields retained.
 - Make any cloud LLM call an explicit, visible action to the user (e.g. indicated in UI), not a silent background call.
 - Give the prediction/logging feature a clear off-switch.
 
@@ -35,7 +35,7 @@
 **Do**
 - Prefer Playwright/browser automation over native UI Automation (UIA) wherever a task can be done through a website — it's more stable and maintainable.
 - Expose narrow capabilities to the planner; never give model output a generic shell, arbitrary path-read, or unrestricted browser-control tool.
-- Log every executed action locally, including failures, for debugging and future prediction-model training.
+- Record actions only after explicit user opt-in; include failures only if the consented logging scope says so.
 - Treat WhatsApp Web (or any ToS-restricted) automation as a known risk — document it, don't quietly rely on it as core functionality until the tradeoff is deliberately accepted.
 
 **Don't**
@@ -49,6 +49,7 @@
 - Build and validate the UI/interaction loop with fixture commands before adding more intent complexity — prove the shell works before adding intelligence.
 - Prototype parsing against synthetic or explicitly consented development examples. Any cloud provider used during development must be opt-in, clearly disclosed, and must not receive real private commands by default.
 - Keep skills as isolated modules with a defined input schema — this is the extensibility mechanism, don't bypass it for "quick" one-off integrations.
+- Commit a clean baseline before starting each roadmap step, then commit that step's completed code and documentation before moving to the next step. Keep step commits separate and update the roadmap status in the completion commit.
 
 **Don't**
 - Don't assume a larger local model is needed; benchmark rules and compact local approaches first. Keep the product's local-first default and use synthetic/consented fixtures instead of requiring cloud AI calls during prototyping.

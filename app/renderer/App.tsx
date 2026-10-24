@@ -64,11 +64,11 @@ export function App() {
       {panel && <div className="absolute inset-x-3 top-14 z-40 max-h-[70%] overflow-y-auto rounded-xl border border-ve-border-subtle bg-ve-bg-primary p-4 shadow-2xl">
         <div className="mb-3 flex items-center justify-between"><h2 className="font-semibold">{panel === "offline" ? "Offline assistant" : panel === "contacts" ? "WhatsApp contacts" : "Saved memory"}</h2><button onClick={() => setPanel(null)} className="text-ve-text-secondary">Close</button></div>
         {panel === "offline" ? <div className="flex flex-col gap-3 text-xs text-ve-text-secondary">
-          <p>Chat transcripts are temporary and are not saved. Contacts and notes you explicitly add stay on this device.</p>
-          <p>Local learning has {behaviorCount} behavior samples. It stores only action categories and coarse time/day context—not message text, search terms, URLs, WhatsApp recipients, or message bodies.</p>
-          <p>The on-device predictor is active. The FedAvg aggregation code is a prototype only: no server or cross-device sharing is configured, so no behavior or model data is uploaded.</p>
+          <p>The current chat view is temporary. Contacts and notes you add are stored on this device. Earlier versions may have saved command text in local behavior samples; the sanitizer was limited, and this database is not encrypted.</p>
+          <p>Learning is currently off: new commands are not recorded, and saved behavior samples are not used for suggestions. {behaviorCount >= 500 ? "At least 500" : behaviorCount} older behavior records are present.</p>
+          <p>Erasing learned behavior removes those samples and the local predictor state. The FedAvg code is a local prototype only; no server or cross-device sharing is configured.</p>
           <button onClick={() => void eraseBehavior()} disabled={behaviorCount === 0} className="self-start rounded-md border border-ve-border-subtle px-3 py-2 text-ve-text-primary enabled:hover:border-ve-error disabled:opacity-50">Erase learned behavior</button>
-          <p>For WhatsApp, Ve prepares the chat and message but never presses Send for you.</p>
+          <p>WhatsApp handoff opens a wa.me link containing the phone number and prefilled message. Ve never presses Send for you.</p>
         </div> : panel === "contacts" ? <div className="flex flex-col gap-3">
           <p className="text-xs text-ve-text-secondary">Save a name and phone number with country code. Example: Ved · 14155550123. Ve opens WhatsApp with the message prefilled; you review and send it.</p>
           <input value={contactName} onChange={(event) => setContactName(event.target.value)} placeholder="Contact name" className="rounded-md border border-ve-border-subtle bg-ve-bg-elevated px-3 py-2 text-sm" />

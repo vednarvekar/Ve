@@ -9,12 +9,8 @@ import {
   listContacts,
   addContact,
   deleteContact,
-  recordBehavior,
-  recordTrainingSample,
-  getTrainingDataset,
   getPredictionState,
   clearBehavior,
-  clearBehaviorData,
 } from "./assistantService.js";
 
 // Keep the app running with no windows/dock presence — this is tray-only,
@@ -43,21 +39,12 @@ app.on("will-quit", () => {
   globalShortcut.unregisterAll();
 });
 
-// IPC bridge: renderer sends a raw command string, main process runs it
-// through the deterministic skill router and returns the result.
+// IPC bridge: renderer sends a command string, main process runs it through
+// the local intent and skill pipeline. Command text is not persisted here;
+// learning collection stays off until an explicit opt-in flow exists.
 ipcMain.handle("ve:run-command", async (_event, input: string) => {
   try {
-    const result = await executeUserInput(input);
-    const action = result.behaviorAction || (result.command ? `${result.command.skill}` : "unknown");
-    const params = result.command?.params || {};
-    const outcome = result.success ? "success" : "failure";
-
-    try {
-      await recordTrainingSample(input, action, params, outcome);
-    } catch (error) {
-      console.warn("Ve could not record training sample:", error);
-    }
-    return result;
+    return await executeUserInput(input);
   } catch (err: any) {
     return { success: false, message: err.message || "Execution error occurred." };
   }
@@ -71,9 +58,3 @@ ipcMain.handle("ve:add-contact", (_event, name: string, phone: string) => addCon
 ipcMain.handle("ve:delete-contact", (_event, id: string) => deleteContact(id));
 ipcMain.handle("ve:get-prediction-state", () => getPredictionState());
 ipcMain.handle("ve:clear-behavior", () => clearBehavior());
-ipcMain.handle("ve:get-training-dataset", (_event, limit?: number) => getTrainingDataset(limit));
-ipcMain.handle(
-  "ve:record-training-sample",
-  (_event, input: string, action: string, params: Record<string, unknown>, outcome: "success" | "failure") =>
-    recordTrainingSample(input, action, params, outcome)
-);

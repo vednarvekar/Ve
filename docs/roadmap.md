@@ -45,10 +45,12 @@ flowchart LR
 
 ### Step 1.1 — Establish an accurate behavior and security baseline
 
-- [ ] Mark complete when the acceptance checks below pass.
+- [x] Complete — audited command paths, stored fields, external handoffs, and known platform/security limits in [implementation baseline](implementation-baseline.md).
 **Goal:** Know what the checked-in app actually does and make its current behavior safe to describe.
 
 **Work:** Inventory the app's commands, IPC handlers, skill validation, storage fields, network calls, platform behavior, and model artifact. Correct any immediate mismatch between runtime behavior and product claims. Document known limitations and the supported development OS.
+
+**Audit notes (2026-10-24):** Normal command execution previously persisted command text and action to SQLite and updated the local predictor without opt-in. Automatic writes and suggestions are now disabled; older records are not removed. The full table/field inventory, supported command paths, external handoffs, and known limitations are in [implementation-baseline.md](implementation-baseline.md). The development environment is WSL2 on x86_64 with Windows host integration; a release support matrix is still undeclared. IPC sender/payload validation remains for Steps 2.1–2.2.
 
 **Done when:** README's current-status section matches the code; every command shown as supported has a traced path from UI to handler to executor; all external network calls and stored fields are listed; no design-only capability is described as shipped.
 

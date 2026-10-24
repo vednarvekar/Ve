@@ -8,7 +8,7 @@ A local-first desktop assistant that interprets natural-language requests, safel
 
 Ve is a local-first desktop assistant that understands a user's request, finds the relevant app, website, or user file, and carries out the task with minimal delay and resource use. The Jarvis comparison describes the feel of the experience; the product is built in deliberate capability layers, starting with dependable everyday tasks and expanding safely.
 
-The intent is to avoid per-command AI service costs by doing command understanding and task planning locally on modest hardware. Deterministic methods should handle simple, known operations; a compact on-device model should be used only if it improves understanding without imposing heavy CPU, memory, or battery costs. The repository currently contains an ONNX embedding-based intent prototype, not a proven general task model. Over time, users may opt into local behavior learning for personalization, with clear inspection, pause, and deletion controls.
+The intent is to avoid per-command AI service costs by doing command understanding and task planning locally on modest hardware. Deterministic methods should handle simple, known operations; a compact on-device model should be used only if it improves understanding without imposing heavy CPU, memory, or battery costs. The repository currently contains an ONNX embedding-based intent prototype, not a proven general task model. New command interactions are not automatically recorded for learning while explicit opt-in and data controls are unfinished. Older builds may have left behavior samples in the local database; this change does not remove them. Future learning requires clear inspection, pause, and deletion controls.
 
 Federated learning is a research direction, not a current product guarantee. The local FedAvg prototype is not connected to a network and does not implement secure aggregation or differential privacy. Any future network protocol needs a reviewed privacy design and measured utility before using real user data.
 
@@ -17,8 +17,8 @@ Federated learning is a research direction, not a current product guarantee. The
 ```
 You say something natural  →  Small on-device model understands it
                            →  Ve executes the action on your desktop
-                           →  Ve learns from what you do
-                           →  Ve gets better at predicting what you'll need
+                           →  With your permission, Ve learns from your behavior
+                           →  Ve can make better suggestions if that learning proves useful
                            →  Federated learning makes everyone's Ve smarter
 ```
 
@@ -101,7 +101,7 @@ The model is not trying to be GPT. The product question is whether a compact cla
 1. **Act, don't chat** — Ve's job is to execute tasks, not hold conversations. Every interaction should end in an action or a clear reason why it can't.
 2. **Lightweight by default** — avoid requiring a GPU or constant cloud inference; measure CPU, memory, battery, and latency on target systems.
 3. **Local by default** — intent understanding and local file/app discovery stay on-device; disclose online lookups and require approval for sensitive external actions.
-4. **Learn by doing** — every interaction makes Ve smarter for that specific user. No manual configuration or training required.
+4. **Learn with permission** — personalize only after the user enables learning and can inspect, pause, and delete its data.
 5. **Transparent uncertainty** — when Ve isn't sure, it asks. It never guesses and executes a wrong action.
 6. **Modular capabilities** — app-specific tasks use scoped integrations; discovering and launching installed apps should not require hardcoding every app into the intent parser.
 7. **Calm intelligence** — proactive suggestions only when confidence is high. Wrong suggestions destroy trust faster than no suggestions.
@@ -127,9 +127,8 @@ The current implementation has:
 - ⬜ Required primary floating launcher with Chat / Voice / Hide-to-tray actions
 - ✅ Deterministic fallback and ONNX embedding-based intent prototype (not benchmarked as an SLM)
 - ✅ Skill registry/router and app, browser, and WhatsApp modules (policy coverage is incomplete)
-- ✅ Local softmax action predictor and FedAvg primitive (the latter is not networked)
-- ✅ SQLite storage, privacy sanitizer, behavior context, and user-managed contacts/notes
-- ✅ User-managed contacts and notes
+- ✅ Local softmax action predictor prototype and FedAvg primitive (prediction use is disabled pending opt-in; federation is not networked)
+- ✅ SQLite storage, privacy sanitizer, behavior context, and user-managed contacts/notes; automatic behavior collection is disabled pending opt-in controls
 - ⬜ Complete main-process policy gate and confirmation lifecycle
 - ⬜ Dynamic installed-app discovery and launch without a hardcoded app catalog
 - ⬜ User-scoped file search and safe open for PDFs/images

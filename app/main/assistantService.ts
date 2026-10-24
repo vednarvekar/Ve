@@ -1,10 +1,4 @@
 import {
-  contextForNow,
-  isBehaviorAction,
-  rankLocalPredictions,
-  type BehaviorAction,
-} from "../core/prediction/localPredictor.js";
-import {
   getDefaultStore,
   listContacts as storeListContacts,
   addContact as storeAddContact,
@@ -20,17 +14,6 @@ import {
 } from "../core/storage/index.js";
 
 export type { Contact, Memory };
-
-const ACTION_COMMANDS: Partial<Record<BehaviorAction, string>> = {
-  "open_app:chrome": "Open Chrome",
-  "open_app:firefox": "Open Firefox",
-  "open_app:vscode": "Open VS Code",
-  "open_app:calculator": "Open Calculator",
-  "open_app:notepad": "Open Notepad",
-  "open_app:terminal": "Open Terminal",
-  "open_app:explorer": "Open File Explorer",
-  "open_app:whatsapp": "Open WhatsApp",
-};
 
 export async function listMemories(): Promise<Memory[]> {
   return storeListMemories();
@@ -88,27 +71,15 @@ export async function getTrainingDataset(limit?: number) {
 }
 
 /**
- * Ranks next-action suggestions using local model state and recent events.
+ * Reports legacy behavior data. Suggestions stay disabled until learning has
+ * an explicit opt-in and user-facing data controls.
  */
 export async function getPredictionState() {
   const store = getDefaultStore();
   const events = store.getRecentBehaviorEvents(500);
-
-  if (events.length < 3) {
-    return { sampleCount: events.length, suggestions: [] as string[] };
-  }
-
-  const latestAction = events.at(-1)?.action;
-  const previousAction = latestAction && isBehaviorAction(latestAction) ? latestAction : null;
-  const model = store.getLocalModel();
-  const ranked = rankLocalPredictions(model, contextForNow(previousAction));
-
-  const suggestions = ranked
-    .filter((item) => item.score >= 0.14 && ACTION_COMMANDS[item.action])
-    .slice(0, 2)
-    .map((item) => ACTION_COMMANDS[item.action] as string);
-
-  return { sampleCount: events.length, suggestions };
+  // Do not use historical behavior data for suggestions until learning has an
+  // explicit opt-in and user-facing controls.
+  return { sampleCount: events.length, suggestions: [] as string[] };
 }
 
 /**
