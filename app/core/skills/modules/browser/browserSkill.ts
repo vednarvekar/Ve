@@ -30,6 +30,10 @@ export class BrowserSkill implements BaseSkill<BrowserParams> {
       if (!url) {
         return { valid: false, error: "A URL or website name is required for browser navigation." };
       }
+      // Protocol security check: reject non-HTTP(S) schemes (e.g. ftp:, file:, javascript:, shell:)
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url) && !/^https?:/i.test(url)) {
+        return { valid: false, error: "Only HTTP and HTTPS web URLs are permitted." };
+      }
       return { valid: true, data: { action: "navigate", url } };
     }
 

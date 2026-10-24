@@ -1,7 +1,7 @@
 import { platform } from "node:os";
 import { existsSync } from "node:fs";
 import type { BaseSkill, SkillContext, SkillResult, SkillValidationResult } from "../../contracts/skillTypes.js";
-import { findWslChrome, launchDetached } from "../../platform/osLauncher.js";
+import { findWslCmd, findWslChrome, launchDetached } from "../../platform/osLauncher.js";
 
 export interface OpenAppParams {
   target: string;
@@ -60,9 +60,9 @@ export class OpenAppSkill implements BaseSkill<OpenAppParams> {
     }
 
     if (context.isWsl && (rawTarget === "chrome" || rawTarget === "google chrome")) {
-      const cmdExe = "/mnt/c/Windows/System32/cmd.exe";
-      if (existsSync(cmdExe)) {
-        const res = await launchDetached(cmdExe, ["/c", "start", "chrome"], "Google Chrome");
+      const cmd = findWslCmd() || "cmd.exe";
+      const res = await launchDetached(cmd, ["/c", "start", "chrome"], "Google Chrome");
+      if (res.success) {
         return {
           ...res,
           behaviorAction: `open_app:${alias.canonicalId}`,

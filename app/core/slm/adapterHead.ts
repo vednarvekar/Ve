@@ -10,7 +10,7 @@ export interface LoRAConfig {
   rank: number;       // r = 4
   alpha: number;      // alpha = 8
   inFeatures: number; // MiniLM hiddenDim = 384
-  outFeatures: number;// numIntents = 5
+  outFeatures: number;// numIntents = 6
 }
 
 export interface SerializedLoRAWeights {
@@ -39,7 +39,7 @@ export class LoRAAdapterHead {
       rank: config.rank ?? 4,
       alpha: config.alpha ?? 8,
       inFeatures: config.inFeatures ?? 384,
-      outFeatures: config.outFeatures ?? 5,
+      outFeatures: config.outFeatures ?? 6,
     };
 
     this.scale = this.config.alpha / this.config.rank; // 8 / 4 = 2.0

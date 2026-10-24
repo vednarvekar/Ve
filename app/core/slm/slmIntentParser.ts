@@ -156,10 +156,14 @@ export class SLMIntentParser {
       const target = match ? match[1]!.trim() : text.trim();
       slots.url = { rawValue: target, normalizedValue: target, confidence: 0.95 };
     } else if (intent === "comm.message") {
-      const match = lower.match(/(?:send|message|text)\s+["']?(.+?)["']?\s+to\s+([a-z0-9_\-\s]+)/i);
-      if (match) {
-        slots.messageBody = { rawValue: match[1]!.trim(), normalizedValue: match[1]!.trim(), confidence: 0.95 };
-        slots.recipient = { rawValue: match[2]!.trim(), normalizedValue: match[2]!.trim(), confidence: 0.95 };
+      const match1 = lower.match(/(?:send|message|text)\s+["']?(.+?)["']?\s+to\s+([a-z0-9_\-\s]+)/i);
+      const match2 = lower.match(/(?:send|message|text)\s+([a-z0-9_\-\s]+?)\s+(?:saying|that)\s+["']?(.+?)["']?[.!?]*$/i);
+      if (match1) {
+        slots.messageBody = { rawValue: match1[1]!.trim(), normalizedValue: match1[1]!.trim(), confidence: 0.95 };
+        slots.recipient = { rawValue: match1[2]!.trim(), normalizedValue: match1[2]!.trim(), confidence: 0.95 };
+      } else if (match2) {
+        slots.recipient = { rawValue: match2[1]!.trim(), normalizedValue: match2[1]!.trim(), confidence: 0.95 };
+        slots.messageBody = { rawValue: match2[2]!.trim(), normalizedValue: match2[2]!.trim(), confidence: 0.95 };
       }
     } else if (intent === "web.search") {
       const match = lower.match(/(?:search|look\s+up|google|find)\s+(?:for\s+)?(.+?)(?:\s+on\s+([a-z0-9]+))?$/i);

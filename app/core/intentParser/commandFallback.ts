@@ -17,13 +17,25 @@ export function hardcodedCommands(rawInput: string): Command | null {
     return null;
   }
 
-  // 1. WhatsApp Intent: "message/send/text <msg> to <contact>"
-  const whatsappMatch = input.match(
+  // 1. WhatsApp Intent: "message/send/text <msg> to <contact>" OR "text <contact> saying <msg>"
+  const whatsappMatch1 = input.match(
     /(?:open\s+whatsapp\s+and\s+)?(?:send|message|text|whatsapp)\s+["“']?(.+)["”']?\s+to\s+(.+?)(?:\s+on\s+whatsapp)?[.!?]*$/i
   );
-  if (whatsappMatch) {
-    const message = (whatsappMatch[1] ?? "").trim().replace(/["“”']/g, "");
-    const recipientName = (whatsappMatch[2] ?? "").trim();
+  if (whatsappMatch1) {
+    const message = (whatsappMatch1[1] ?? "").trim().replace(/["“”']/g, "");
+    const recipientName = (whatsappMatch1[2] ?? "").trim();
+    return {
+      skill: "whatsApp",
+      params: { message, recipientName },
+    };
+  }
+
+  const whatsappMatch2 = input.match(
+    /(?:open\s+whatsapp\s+and\s+)?(?:send|message|text|whatsapp)\s+([a-zA-Z0-9_\-\s]+?)\s+(?:saying|that)\s+["“']?(.+?)["”']?[.!?]*$/i
+  );
+  if (whatsappMatch2) {
+    const recipientName = (whatsappMatch2[1] ?? "").trim();
+    const message = (whatsappMatch2[2] ?? "").trim().replace(/["“”']/g, "");
     return {
       skill: "whatsApp",
       params: { message, recipientName },
