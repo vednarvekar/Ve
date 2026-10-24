@@ -5,18 +5,18 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const TEST_FILES = [
-  // 1. Prediction & Federated Learning Math
-  path.join(__dirname, "prediction.test.mjs"),
-  // 2. Unit Tests
-  path.join(__dirname, "unit", "skills-failure.unit.test.mjs"),
-  path.join(__dirname, "unit", "slm.unit.test.mjs"),
-  path.join(__dirname, "unit", "cross-platform.unit.test.mjs"),
-  path.join(__dirname, "storage.test.mjs"),
-  // 3. Integration Tests
-  path.join(__dirname, "integration", "e2e-execution.integration.test.mjs"),
-  path.join(__dirname, "integration", "failure-resilience.integration.test.mjs"),
-];
+function discoverTests(directory) {
+  return readdirSync(directory, { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap((entry) => {
+      const fullPath = path.join(directory, entry.name);
+      if (entry.isDirectory()) return discoverTests(fullPath);
+      return entry.isFile() && entry.name.endsWith(".test.mjs") ? [fullPath] : [];
+    });
+}
+
+const TEST_FILES = discoverTests(__dirname);
+if (TEST_FILES.length === 0) throw new Error("No test files were discovered.");
 
 console.log("\n=======================================================");
 console.log("      VE STRICT UNIT & INTEGRATION TEST SUITE          ");

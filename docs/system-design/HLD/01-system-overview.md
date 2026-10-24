@@ -85,7 +85,7 @@ graph TB
 ## 3. Inter-Process Communication & Data Flow
 
 ### Request Lifecycle Sequence
-1. **Trigger**: User inputs a request via keyboard (`Enter`) or speaks into the voice interface.
+1. **Trigger**: Current prototype accepts typed text with `Enter`; local voice input is planned and must follow the same command path after it is implemented.
 2. **IPC Dispatch**: Renderer dispatches an immutable message payload via `window.veAPI.executeCommand(payload)` over `ipcRenderer.invoke`.
 3. **Intent Resolution**:
    - The Main Process passes the input through the deterministic rule engine (Fast Path).

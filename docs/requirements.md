@@ -48,11 +48,22 @@ Installed-app discovery and generic launch should work for apps unknown to Ve. I
 
 ### FR-1: Understand and represent a goal
 
-- Accept typed natural-language requests in the first version; voice is a later input adapter.
+- Accept typed natural-language requests first; add voice as a later input adapter that follows FR-10.
 - Convert a request into a versioned typed goal with intent, entities, candidate resources, and requested side effects.
 - Support clarification when multiple apps/files/people/items match or the command lacks required information.
 - Keep the model's output limited to registered capability IDs and schema-bound parameters.
 - Preserve the user's original task constraints through the complete workflow; do not silently substitute a different item or recipient.
+
+### FR-10: Accept voice commands privately
+
+- Voice uses explicit push-to-talk. Do not keep the microphone open in the background or add a wake word in the MVP.
+- Request microphone permission when the user starts voice capture. Show a clear recording indicator and a cancel action; stop capture immediately on release, cancel, or completion.
+- Transcribe locally. Do not upload audio or transcript to a speech service, and do not save raw audio by default.
+- Put the transcript into the editable chat composer. The user reviews it and presses Send; transcription alone never executes an action.
+- Send approved text through the same parser, capability validation, and policy path as typed commands.
+- Initial engine candidate: `sherpa-onnx-node` with the streaming Zipformer English 20M model in int8. The documented int8 encoder/decoder/joiner weights total about 42 MB, and sherpa documents microphone streaming and Node.js bindings. This model is English-only, trained on LibriSpeech, and sherpa warns small Zipformer models can have lower accuracy. This is a benchmark candidate, not a final selection.
+- Benchmark against Whisper tiny.en and suitable Vosk models on consented short Ve commands, including supported languages/accent and ordinary room noise. Record word error rate, correct-intent/action rate, false-command rate, latency, RAM/CPU, model size, and native packaging behavior on the declared target OS.
+- Do not ship a model until its individual model license and redistribution terms are checked. Text-to-speech is outside this input requirement.
 
 ### FR-9: Provide the movable desktop launcher as Ve's primary interaction
 
@@ -173,6 +184,8 @@ These sources support requirements and design constraints; they do not guarantee
 - Electron recommends sandboxing renderers, context isolation, restrictive navigation, and validating IPC senders: [Electron security checklist](https://www.electronjs.org/docs/latest/tutorial/security), [context isolation](https://www.electronjs.org/docs/latest/tutorial/context-isolation), [IPC](https://www.electronjs.org/docs/latest/tutorial/ipc).
 - OWASP identifies excessive agent agency and prompt injection as risks, recommending least privilege, strict tool-boundary checks, and treating retrieved content as untrusted: [Excessive Agency](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/), [Prompt Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html), [AI Agent Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html).
 - Google's FunctionGemma is a specialized 270M function-calling model and its docs describe a compound approach where a lightweight edge model handles common local actions while larger models are reserved for harder cases. This supports evaluating a hybrid design; it does not prove that a 10–20M model is sufficient for Ve: [FunctionGemma overview](https://ai.google.dev/gemma/docs/functiongemma).
+- sherpa-onnx documents local offline ASR, Node.js bindings, optional `node-cpal` microphone capture, and a streaming English Zipformer 20M model with roughly 42 MB of int8 weight files. Its docs caution that the small model may have lower accuracy: [sherpa-onnx JavaScript API and microphone dependency](https://github.com/k2-fsa/sherpa/blob/master/docs/source/onnx/javascript-api/install.rst), [streaming Zipformer 20M model](https://k2-fsa.github.io/sherpa/onnx/pretrained_models/online-transducer/zipformer-transducer-models.html).
+- Whisper.cpp lists a 75 MiB tiny/tiny.en model: [model sizes](https://github.com/ggml-org/whisper.cpp/blob/master/models/README.md). Vosk documents small models around 50 MB and about 300 MB runtime memory, with language-specific accuracy differences: [model catalog and resource notes](https://alphacephei.com/vosk/models).
 - Microsoft documents OS-managed Windows app identities and file pickers, supporting dynamic app discovery and user-selected file access rather than model-chosen paths: [AUMID discovery](https://learn.microsoft.com/en-us/windows/configuration/store/find-aumid), [Windows file pickers](https://learn.microsoft.com/en-us/windows/apps/develop/files/using-file-folder-pickers).
 - OSWorld evaluates computer-use agents on real desktop/web tasks, including cross-app workflows. Its benchmark and later long-horizon follow-up illustrate why Ve needs end-to-end task evaluation and scoped targets rather than assuming generic UI automation is solved: [OSWorld paper](https://arxiv.org/abs/2404.07972), [OSWorld 2.0 paper](https://arxiv.org/abs/2606.29537).
 - Spotify's official docs expose catalog search and playback APIs but note OAuth scopes, Premium requirements, current development-mode restrictions, and prohibitions on AI training with Spotify content / commercial streaming integrations. Recheck before implementation: [Spotify Web API](https://developer.spotify.com/documentation/web-api), [Search reference](https://developer.spotify.com/documentation/web-api/reference/search), [Start playback](https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback), [Authorization and PKCE](https://developer.spotify.com/documentation/web-api/concepts/authorization), [Quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes), [February developer-mode changes](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide), [July 2026 quota update](https://developer.spotify.com/blog/2026-07-23-web-api-quota-updates).

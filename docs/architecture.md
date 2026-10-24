@@ -10,7 +10,7 @@ Ve's target architecture is a three-tier, local-first system. Networked federati
 
 ```mermaid
 flowchart TD
-    User([User Voice / Text]) --> TrayUI[Tray Shell & Frameless Popup]
+    User([User Text now / Voice planned]) --> TrayUI[Tray Shell & Frameless Popup]
     TrayUI -->|Typed IPC| MainCoord[Main Process Coordinator]
     
     subgraph Brain ["On-Device Brain"]

@@ -23,6 +23,7 @@ The repository contains an Electron/React tray shell, text command UI, ONNX embe
 ```mermaid
 flowchart LR
   A[1. Establish truthful baseline] --> A2[1.2–1.3 Reliable shell + required floating launcher]
+  A2 --> V[1.4 Voice engine benchmark]
   A2 --> B[2. Trust boundary and command contracts]
   B --> C[3. Bounded workflow engine]
   C --> D[4. Dynamic app discovery and launch]
@@ -30,6 +31,8 @@ flowchart LR
   C --> F[6. Streaming catalog lookup]
   C --> G[7. Spotify connector]
   C --> H[8. WhatsApp safe handoff]
+  B --> W[2.9 Local push-to-talk voice input]
+  V --> W
   D --> I[9. Local data governance]
   E --> I
   F --> I
@@ -62,6 +65,8 @@ flowchart LR
 
 **Work:** Finish hotkey registration/lifecycle, popup show/hide and focus behavior, outside-click dismissal, startup/shutdown cleanup, and clear action success/failure feedback. Keep voice marked unavailable until it works end to end.
 
+**Implementation status (2026-10-24):** Single-instance ownership, tray/shortcut restoration, popup recreation after close, delayed display until renderer readiness, and taskbar presence while the popup is open are implemented. Switching focus to an app launched from Ve no longer dismisses Ve when the pointer remains inside its popup; clicking outside still dismisses it to the tray. All 12 automated suites pass, including popup focus policy and IPC sender validation. The popup stays hidden on ordinary startup to follow the on-demand interaction rule. Tray click, focus return, outside dismissal, and restart interactions still need a real desktop acceptance pass, so this step remains open.
+
 **Done when:** Manual acceptance notes cover repeated hotkey toggles, tray click, focus return, outside dismissal, app restart, and unavailable voice behavior on the declared target OS; no duplicate shortcuts/listeners remain after reload.
 
 ### Step 1.3 — Add the required floating assistant launcher
@@ -74,6 +79,16 @@ flowchart LR
 
 **Done when:** Manual checks cover orb visible on normal startup, click versus drag, edge clamping, multiple displays, display removal/reconnect, scaling changes, restart/position restore, hide-to-tray and restore, keyboard-only use, no accidental focus stealing, and disabled mic behavior; the tray remains available while the orb is hidden.
 
+### Step 1.4 — Select the local voice-recognition runtime
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 1.1.
+**Goal:** Choose a speech recognizer that fits Ve's privacy, language, and low-resource targets before enabling the launcher microphone.
+
+**Work:** Treat sherpa-onnx Node bindings with its streaming English Zipformer 20M int8 model as the first candidate. Compare it with Whisper tiny.en and suitable Vosk language models on short, consented Ve commands. Measure command success and false actions as well as transcription accuracy, latency, CPU/RAM, disk size, and Electron native packaging on the declared target OS. Decide initial language support and verify model licenses. Voice is push-to-talk, local-only, no stored audio, and transcription lands in the editable composer; the user explicitly sends it.
+
+**Done when:** A decision record selects an engine/model using recorded results from representative speech and target hardware, or records why no candidate meets the threshold and what alternative is needed. The choice must preserve offline operation and must not directly execute a transcript.
+
 ## Phase 2 — Build the trust boundary and task capabilities
 
 ### Step 2.1 — Define Ve's threat model and capability permissions
@@ -83,6 +98,8 @@ flowchart LR
 **Goal:** Limit what a compromised renderer, malicious model output, hostile webpage, or compromised host can make Ve do.
 
 **Work:** Document assets and threats: local files, contacts, messages, app sessions, and user identity. Define capability-based permissions, IPC sender validation, main-process enforcement, consent boundaries, data-flow limits, and confirmation requirements. Explicitly prohibit arbitrary shell/PowerShell, admin elevation, broad filesystem crawling, unprompted credential access, and model-selected paths. Treat web content, app metadata, and model output as untrusted input. Note that a compromised host cannot be made foolproof; minimize Ve's additional access and blast radius.
+
+**Implementation status (2026-10-24):** As an early security slice, every renderer IPC handler now rejects requests unless they originate from Ve's exact local main frame; command and personal-data payloads have bounded string validation. The renderer is sandboxed, remote navigation is blocked, and popup creation requests are denied. Automated tests cover untrusted frames/URLs, malformed payloads, unsafe navigation schemes, and shell-like app names. The full threat model, capability permission policy, confirmation rules, and security review in this step are still outstanding.
 
 **Done when:** A threat model maps each capability to least-privilege access and abuse cases; every privileged operation has a main-process policy; no renderer/model input can directly invoke a generic command or filesystem API; the security limits are documented without claiming perfect protection.
 
@@ -155,6 +172,16 @@ flowchart LR
 **Work:** Resolve the contact and exact file using approved local data. WhatsApp click-to-chat can open a conversation and prefill text but does not attach a local file; WhatsApp Desktop supports the user manually selecting and sending an attachment. Provide a clear handoff that opens the official chat where supported and guides the user to attach/review/send. Do not automate browser internals, reverse engineer WhatsApp, or send on a personal account unless an officially supported and terms-compliant interface is verified. Treat WhatsApp Business Platform separately: it is for business/customer messaging, requires business onboarding, policy-compliant templates/windows and may incur fees; do not use it as a workaround for personal messaging.
 
 **Done when:** UI presents exact contact and file before handing off; opening the chat does not send; the user performs the final attach/send action in WhatsApp; cancellation leaves no outgoing message; logs omit file contents and message body; automatic personal-account sending remains disabled absent a verified official integration.
+
+### Step 2.9 — Add local push-to-talk voice input
+
+- [ ] Mark complete when the acceptance checks below pass.
+**Depends on:** 1.4, 2.1, and 2.2.
+**Goal:** Let users speak commands without adding a cloud speech dependency or bypassing command policy.
+
+**Work:** Implement the selected local ASR behind a speech-recognizer interface, with mic capture isolated from intent/model code. Request OS permission on demand, show recording/listening/error states, stop on release/cancel/timeout, and never persist raw audio. Load ASR outside the renderer's privileged boundary and package native dependencies for the supported OS. Fill the existing composer with the transcript for editing; the user must press Send. Route accepted text through the exact typed command path and policy checks. Keep the microphone disabled on model/permission failure and allow text-only use.
+
+**Done when:** On the declared OS and hardware, checks cover permission grant/denial/revocation, recording/cancel/timeout, transcript correction, offline operation, unavailable model/mic, and typed/voice parity. No audio is written or sent; a transcript cannot invoke a capability without the user's Send action; measured CPU/RAM/latency and supported languages are documented.
 
 ## Phase 3 — Make local data controls real
 
@@ -236,4 +263,4 @@ flowchart LR
 
 ## Deferred / explicitly out of current scope
 
-Voice input, broad system controls, arbitrary browser workflows, community skills, startup suggestions, cloud intent parsing with real user commands, and production federated infrastructure stay deferred until the relevant earlier phases pass. Messaging is a high-impact integration and should remain narrowly scoped with explicit confirmation and platform/terms review.
+Voice input stays disabled until Steps 1.4 and 2.9 pass. Broad system controls, arbitrary browser workflows, community skills, startup suggestions, cloud intent parsing with real user commands, and production federated infrastructure stay deferred until the relevant earlier phases pass. Messaging is a high-impact integration and should remain narrowly scoped with explicit confirmation and platform/terms review.

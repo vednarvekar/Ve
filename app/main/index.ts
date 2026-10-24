@@ -1,6 +1,9 @@
-import { app, globalShortcut, ipcMain } from "electron";
+import { app, globalShortcut, ipcMain, type IpcMainInvokeEvent, type Tray } from "electron";
+import * as path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createTray } from "./tray.js";
-import { togglePopup } from "./popupWindow.js";
+import { showPopup, togglePopupFromShortcut } from "./popupWindow.js";
+import { guardTrustedRendererIpc, isBoundedString } from "./ipcSecurity.js";
 import { executeUserInput } from "../core/intentParser/index.js";
 import {
   listMemories,
@@ -13,48 +16,98 @@ import {
   clearBehavior,
 } from "./assistantService.js";
 
-// Keep the app running with no windows/dock presence — this is tray-only,
-// there is no "main window" and the app must never quit when a popup closes.
-app.dock?.hide();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const trustedRendererUrl = pathToFileURL(path.join(__dirname, "../renderer/index.html")).href;
 
-app.whenReady().then(() => {
-  const tray = createTray();
-  const shortcutRegistered = globalShortcut.register("CommandOrControl+Shift+Space", () => {
-    togglePopup(tray);
-  });
-  if (!shortcutRegistered) console.warn("Ve could not register CommandOrControl+Shift+Space.");
-  togglePopup(tray);
-}).catch((error) => {
-  console.error("Ve failed during startup:", error);
+function registerRendererIpc<TArgs extends unknown[], TResult>(
+  channel: string,
+  handler: (event: IpcMainInvokeEvent, ...args: TArgs) => TResult
+): void {
+  ipcMain.handle(channel, guardTrustedRendererIpc(trustedRendererUrl, handler));
+}
+
+// Only one tray process may own the shortcut and popup lifecycle.
+const ownsSingleInstanceLock = app.requestSingleInstanceLock();
+let tray: Tray | null = null;
+let openRequestedDuringStartup = false;
+
+function openFromSystem(): void {
+  if (tray) {
+    showPopup(tray);
+  } else {
+    openRequestedDuringStartup = true;
+  }
+}
+
+if (!ownsSingleInstanceLock) {
   app.quit();
-});
+} else {
+  app.on("second-instance", () => {
+    openFromSystem();
+  });
 
-app.on("window-all-closed", () => {
-  // Popup windows hide rather than close, and we have no other windows.
-  // Intentionally do nothing here — never quit on window close for a
-  // tray-only app (default Electron behavior would quit on all-closed).
-});
+  app.on("activate", () => {
+    openFromSystem();
+  });
 
-app.on("will-quit", () => {
-  globalShortcut.unregisterAll();
-});
+  void app.whenReady().then(() => {
+    // Keep Ve in the tray on macOS as on the other supported development hosts.
+    app.dock?.hide();
 
-// IPC bridge: renderer sends a command string, main process runs it through
-// the local intent and skill pipeline. Command text is not persisted here;
-// learning collection stays off until an explicit opt-in flow exists.
-ipcMain.handle("ve:run-command", async (_event, input: string) => {
+    const shortcutRegistered = globalShortcut.register("CommandOrControl+Shift+Space", () => {
+      if (tray) togglePopupFromShortcut(tray);
+    });
+    if (!shortcutRegistered) console.warn("Ve could not register CommandOrControl+Shift+Space.");
+
+    tray = createTray(shortcutRegistered);
+    if (openRequestedDuringStartup) showPopup(tray);
+    openRequestedDuringStartup = false;
+  }).catch((error) => {
+    console.error("Ve failed during startup:", error);
+    app.quit();
+  });
+
+  app.on("window-all-closed", () => {
+    // Closing the popup leaves Ve available from the tray.
+  });
+
+  app.on("will-quit", () => {
+    globalShortcut.unregisterAll();
+  });
+}
+
+// IPC bridge: command text is handled locally and is not persisted here.
+registerRendererIpc("ve:run-command", async (_event, input: unknown) => {
+  if (!isBoundedString(input, 4000, true)) {
+    return { success: false, message: "Commands must be text under 4,000 characters." };
+  }
   try {
     return await executeUserInput(input);
-  } catch (err: any) {
-    return { success: false, message: err.message || "Execution error occurred." };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Execution error occurred.";
+    return { success: false, message };
   }
 });
 
-ipcMain.handle("ve:list-memories", () => listMemories());
-ipcMain.handle("ve:add-memory", (_event, text: string) => addMemory(text));
-ipcMain.handle("ve:delete-memory", (_event, id: string) => deleteMemory(id));
-ipcMain.handle("ve:list-contacts", () => listContacts());
-ipcMain.handle("ve:add-contact", (_event, name: string, phone: string) => addContact(name, phone));
-ipcMain.handle("ve:delete-contact", (_event, id: string) => deleteContact(id));
-ipcMain.handle("ve:get-prediction-state", () => getPredictionState());
-ipcMain.handle("ve:clear-behavior", () => clearBehavior());
+registerRendererIpc("ve:list-memories", () => listMemories());
+registerRendererIpc("ve:add-memory", (_event, text: unknown) => {
+  if (!isBoundedString(text, 2000)) throw new Error("Memory text must be under 2,000 characters.");
+  return addMemory(text);
+});
+registerRendererIpc("ve:delete-memory", (_event, id: unknown) => {
+  if (!isBoundedString(id, 128)) throw new Error("Invalid memory identifier.");
+  return deleteMemory(id);
+});
+registerRendererIpc("ve:list-contacts", () => listContacts());
+registerRendererIpc("ve:add-contact", (_event, name: unknown, phone: unknown) => {
+  if (!isBoundedString(name, 80) || !isBoundedString(phone, 32)) {
+    throw new Error("Contact name or phone number is invalid.");
+  }
+  return addContact(name, phone);
+});
+registerRendererIpc("ve:delete-contact", (_event, id: unknown) => {
+  if (!isBoundedString(id, 128)) throw new Error("Invalid contact identifier.");
+  return deleteContact(id);
+});
+registerRendererIpc("ve:get-prediction-state", () => getPredictionState());
+registerRendererIpc("ve:clear-behavior", () => clearBehavior());

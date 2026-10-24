@@ -116,7 +116,7 @@ The model is not trying to be GPT. The product question is whether a compact cla
 | **Intent parsing** | Local prototype + deterministic fallback | Benchmark and confidence calibration remain roadmap work |
 | **Desktop automation** | OS APIs + Playwright (browser) | App launch, system control, browser automation |
 | **Local storage** | SQLite via Node `node:sqlite` (current prototype) | Behavior context, contacts, notes, and local prediction state |
-| **Voice** | Local speech-to-text (planned) | Offline voice input feeding into the same pipeline |
+| **Voice** | Local push-to-talk speech-to-text (planned) | sherpa-onnx streaming Zipformer English 20M int8 is the benchmark candidate; transcript must be reviewed before sending |
 | **Federated learning** | Research direction | Local FedAvg prototype only; no secure aggregation, DP, coordinator, or network client |
 
 ## Current state
@@ -157,7 +157,7 @@ See [`requirements.md`](./requirements.md) for the full capability and security 
 
 - Whether a compact SLM is needed after benchmarking simpler approaches
 - Model/runtime choice and acceptable accuracy, latency, and memory thresholds
-- Voice STT engine (Whisper.cpp? Vosk? other local options?)
+- Validate the sherpa-onnx Zipformer English 20M int8 voice candidate against alternatives and choose initial language/platform support (roadmap Step 1.4)
 - Target OS scope — Windows-first, but is Linux a dev convenience or a product target?
 - Federation coordinator infrastructure and secure aggregation mechanism
 - First skill set beyond the current three
