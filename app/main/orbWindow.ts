@@ -2,7 +2,7 @@ import { app, BrowserWindow, screen, type Tray } from "electron";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { clampOrbPosition, isWslEnvironment, launcherMenuBounds, visibleWorkArea as applyVisibleWorkArea, type OrbPosition } from "./orbPolicy.js";
+import { clampOrbPosition, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, visibleWorkArea as applyVisibleWorkArea, type OrbPosition } from "./orbPolicy.js";
 import { isTrustedRendererUrl } from "./ipcSecurity.js";
 
 const ORB_SIZE = 68;
@@ -19,6 +19,7 @@ let menuReady = false;
 let menuRequested = false;
 let savedPosition: OrbPosition | null = null;
 let displayListenersRegistered = false;
+let positionSaveTimer: ReturnType<typeof setTimeout> | null = null;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const orbUrl = pathToFileURL(path.join(__dirname, "../renderer/orb.html")).href;
 const menuUrl = pathToFileURL(path.join(__dirname, "../renderer/menu.html")).href;
@@ -128,7 +129,7 @@ export function createOrbWindow(tray: Tray): BrowserWindow {
     transparent: true,
     backgroundColor: "#00000000",
     resizable: false,
-    movable: false,
+    movable: true,
     hasShadow: false,
     skipTaskbar: true,
     alwaysOnTop: true,
@@ -145,12 +146,34 @@ export function createOrbWindow(tray: Tray): BrowserWindow {
   orb = window;
   orbReady = false;
   configureTrustedPage(window);
+  window.on("move", () => {
+    if (orb !== window || window.isDestroyed()) return;
+    const position = currentPosition();
+    if (menu && !menu.isDestroyed() && menu.isVisible()) {
+      const bounds = menuBounds(position);
+      menu.setPosition(bounds.x, bounds.y, false);
+    }
+    if (positionSaveTimer) clearTimeout(positionSaveTimer);
+    positionSaveTimer = setTimeout(() => {
+      positionSaveTimer = null;
+      if (orb !== window || window.isDestroyed()) return;
+      const clamped = clampToVisibleArea(currentPosition());
+      if (clamped.x !== window.getBounds().x || clamped.y !== window.getBounds().y) {
+        window.setPosition(clamped.x, clamped.y, false);
+      }
+      writeSavedPosition(clamped);
+    }, 180);
+  });
   window.once("ready-to-show", () => {
     if (orb !== window || window.isDestroyed()) return;
     orbReady = true;
     if (orbRequestedVisible) window.showInactive();
   });
   window.once("closed", () => {
+    if (positionSaveTimer) {
+      clearTimeout(positionSaveTimer);
+      positionSaveTimer = null;
+    }
     if (orb === window) {
       orb = null;
       orbReady = false;
@@ -198,7 +221,9 @@ function createMenuWindow(): BrowserWindow {
   });
   window.on("blur", () => {
     setTimeout(() => {
-      if (menu === window && !window.isDestroyed() && !window.isFocused()) setOrbMenuVisible(false);
+      if (menu !== window || window.isDestroyed()) return;
+      const orbFocused = Boolean(orb && !orb.isDestroyed() && orb.isFocused());
+      if (shouldDismissOrbMenuAfterBlur(window.isFocused(), orbFocused)) setOrbMenuVisible(false);
     }, 0);
   });
   window.once("closed", () => {

@@ -48,10 +48,10 @@ export function launcherMenuBounds(
   return { x, y, width: menuWidth, height: menuHeight };
 }
 
-export function didPointerMoveBeyondThreshold(dx: number, dy: number, threshold = 5): boolean {
-  return Math.hypot(dx, dy) >= threshold;
-}
-
 export function hideLauncherUsesTaskbarFallback(platform: string): boolean {
   return platform === "linux";
+}
+
+export function shouldDismissOrbMenuAfterBlur(menuFocused: boolean, orbFocused: boolean): boolean {
+  return !menuFocused && !orbFocused;
 }
