@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { clampOrbPosition, hideLauncherUsesTaskbarFallback, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, visibleWorkArea } from "../../dist/main/orbPolicy.js";
+import { clampOrbPosition, didPointerMoveBeyondThreshold, hideLauncherUsesTaskbarFallback, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, visibleWorkArea } from "../../dist/main/orbPolicy.js";
 
 const workArea = { x: 0, y: 0, width: 1920, height: 1080 };
 
@@ -14,6 +14,8 @@ assert.deepEqual(launcherMenuBounds({ x: 300, y: 300 }, workArea), { x: 368, y: 
 assert.deepEqual(launcherMenuBounds({ x: 1844, y: 956 }, workArea), { x: 1640, y: 953, width: 204, height: 74 }, "the menu flips to the orb's left near the right display edge");
 assert.deepEqual(launcherMenuBounds({ x: 400, y: 400 }, workArea).x, launcherMenuBounds({ x: 500, y: 400 }, workArea).x - 100, "the menu tracks the orb position while it moves");
 
+assert.equal(didPointerMoveBeyondThreshold(3, 3), false, "a center press with a small hand movement remains a click");
+assert.equal(didPointerMoveBeyondThreshold(6, 0), true, "a center press dragged beyond the threshold moves the orb");
 assert.equal(hideLauncherUsesTaskbarFallback("linux"), true, "hiding the orb keeps Ve available on the Linux taskbar");
 assert.equal(hideLauncherUsesTaskbarFallback("win32"), false, "Windows can hide the orb to its system tray");
 assert.equal(shouldDismissOrbMenuAfterBlur(false, true), false, "focusing the orb during a drag keeps its menu open");

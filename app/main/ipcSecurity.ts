@@ -1,4 +1,4 @@
-import type { IpcMainInvokeEvent } from "electron";
+import type { IpcMainEvent, IpcMainInvokeEvent } from "electron";
 
 /**
  * Reject IPC from iframes, navigated pages, and any renderer other than Ve's
@@ -14,6 +14,18 @@ export function guardTrustedRendererIpc<TArgs extends unknown[], TResult>(
       throw new Error("Rejected IPC request from an untrusted renderer frame.");
     }
     return handler(event, ...args);
+  };
+}
+
+/** Fire-and-forget variant for high-frequency renderer updates. */
+export function guardTrustedRendererMessage<TArgs extends unknown[]>(
+  trustedRendererUrl: string | readonly string[],
+  handler: (event: IpcMainEvent, ...args: TArgs) => void
+): (event: IpcMainEvent, ...args: TArgs) => void {
+  return (event, ...args) => {
+    const frame = event.senderFrame;
+    if (!frame || frame !== event.sender.mainFrame || !isTrustedRendererUrl(trustedRendererUrl, frame.url)) return;
+    handler(event, ...args);
   };
 }
 

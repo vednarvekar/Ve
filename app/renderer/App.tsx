@@ -53,6 +53,7 @@ export function App() {
           <button onClick={() => setPanel(panel === "contacts" ? null : "contacts")} className="shrink-0 rounded-md px-2 py-1 text-xs text-ve-text-secondary hover:bg-ve-bg-user-bubble">Contacts · {contacts.length}</button>
           <button onClick={() => setPanel(panel === "offline" ? null : "offline")} className="shrink-0 rounded-md px-2 py-1 text-xs text-ve-text-secondary hover:bg-ve-bg-user-bubble">Offline</button>
           {messages.length > 0 && <button type="button" onClick={clearHistory} className="shrink-0 rounded-md px-2 py-1 text-xs text-ve-text-secondary hover:bg-ve-bg-user-bubble hover:text-ve-text-primary">Clear</button>}
+          <button type="button" aria-label="Show floating launcher" title="Show floating launcher" onClick={() => void window.ve.showOrb()} className="shrink-0 rounded-md border border-ve-border-subtle px-2 py-1 text-xs text-ve-accent hover:bg-ve-bg-user-bubble">Show orb</button>
         </div>
       </header>
       <ChatView messages={messages} isProcessing={isProcessing} />

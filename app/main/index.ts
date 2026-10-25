@@ -2,9 +2,9 @@ import { app, globalShortcut, ipcMain, type IpcMainInvokeEvent, type Tray } from
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createTray } from "./tray.js";
-import { showPopup, togglePopupFromShortcut } from "./popupWindow.js";
+import { hidePopup, showPopup, togglePopupFromShortcut } from "./popupWindow.js";
 import { hideOrb, getOrbPosition, isOrbVisible, moveOrb, saveOrbPosition, setOrbMenuVisible, showOrb } from "./orbWindow.js";
-import { guardTrustedRendererIpc, isBoundedString } from "./ipcSecurity.js";
+import { guardTrustedRendererIpc, guardTrustedRendererMessage, isBoundedString } from "./ipcSecurity.js";
 import { hideLauncherUsesTaskbarFallback } from "./orbPolicy.js";
 import { executeUserInput } from "../core/intentParser/index.js";
 import {
@@ -132,6 +132,11 @@ registerRendererIpc("ve:orb-hide", () => {
   // taskbar window when the launcher is hidden there.
   if (tray && hideLauncherUsesTaskbarFallback(process.platform)) showPopup(tray);
 }, trustedLauncherUrls);
+registerRendererIpc("ve:show-orb", () => {
+  if (!tray) return;
+  showOrb(tray);
+  hidePopup();
+});
 registerRendererIpc("ve:orb-get-position", () => getOrbPosition(), trustedLauncherUrls);
 registerRendererIpc("ve:orb-move", (_event, x: unknown, y: unknown) => {
   if (typeof x !== "number" || !Number.isFinite(x) || typeof y !== "number" || !Number.isFinite(y)) {
@@ -139,4 +144,9 @@ registerRendererIpc("ve:orb-move", (_event, x: unknown, y: unknown) => {
   }
   return moveOrb({ x: Math.round(x), y: Math.round(y) });
 }, trustedLauncherUrls);
+ipcMain.on("ve:orb-drag-position", guardTrustedRendererMessage(trustedOrbUrl, (_event, x: unknown, y: unknown) => {
+  if (typeof x !== "number" || !Number.isFinite(x) || Math.abs(x) > 1_000_000 ||
+      typeof y !== "number" || !Number.isFinite(y) || Math.abs(y) > 1_000_000) return;
+  moveOrb({ x: Math.round(x), y: Math.round(y) });
+}));
 registerRendererIpc("ve:orb-save-position", () => saveOrbPosition(), trustedLauncherUrls);

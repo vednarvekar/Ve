@@ -19,8 +19,10 @@ contextBridge.exposeInMainWorld("ve", {
   setOrbMenuVisible: (visible: boolean) => ipcRenderer.invoke("ve:orb-menu-visible", visible),
   orbOpenChat: () => ipcRenderer.invoke("ve:orb-open-chat"),
   orbHide: () => ipcRenderer.invoke("ve:orb-hide"),
+  showOrb: () => ipcRenderer.invoke("ve:show-orb"),
   getOrbPosition: () => ipcRenderer.invoke("ve:orb-get-position"),
   moveOrb: (x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke("ve:orb-move", x, y),
+  dragOrb: (x: number, y: number): void => ipcRenderer.send("ve:orb-drag-position", x, y),
   orbSavePosition: () => ipcRenderer.invoke("ve:orb-save-position"),
   onOrbMenuState: (callback: (visible: boolean) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, visible: unknown) => {

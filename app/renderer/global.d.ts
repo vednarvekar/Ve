@@ -18,8 +18,10 @@ declare global {
     setOrbMenuVisible(visible: boolean): Promise<void>;
     orbOpenChat(): Promise<void>;
     orbHide(): Promise<void>;
+    showOrb(): Promise<void>;
     getOrbPosition(): Promise<{ x: number; y: number }>;
     moveOrb(x: number, y: number): Promise<{ x: number; y: number }>;
+    dragOrb(x: number, y: number): void;
     orbSavePosition(): Promise<void>;
     onOrbMenuState(callback: (visible: boolean) => void): () => void;
   }

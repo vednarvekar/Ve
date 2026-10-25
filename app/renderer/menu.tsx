@@ -40,7 +40,7 @@ function LauncherMenu() {
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3m-4 0h8" /></svg>
         <span>Voice</span>
       </button>
-      <button className="menu-action" aria-label="Hide launcher to system tray" title="Hide launcher to system tray" onClick={() => void window.ve.orbHide()}>
+      <button className="menu-action" aria-label="Hide floating launcher" title="Hide launcher; Ve stays available from the tray or taskbar" onClick={() => void window.ve.orbHide()}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v5a3 3 0 0 1-3 3h-2v7H9v-7H7a3 3 0 0 1-3-3zM4 10h4m8 0h4" /></svg>
         <span>Hide</span>
       </button>

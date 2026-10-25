@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { guardTrustedRendererIpc, isBoundedString, isTrustedRendererUrl } from "../../dist/main/ipcSecurity.js";
+import { guardTrustedRendererIpc, guardTrustedRendererMessage, isBoundedString, isTrustedRendererUrl } from "../../dist/main/ipcSecurity.js";
 
 const trustedUrl = "file:///opt/ve/dist/renderer/index.html";
 const mainFrame = { url: trustedUrl };
@@ -27,6 +27,16 @@ for (const event of attacks) {
 }
 
 assert.equal(handlerCalls, 1, "rejected IPC must never invoke the privileged handler");
+
+let messageCalls = 0;
+const guardedMessage = guardTrustedRendererMessage(trustedUrl, (_event, x, y) => {
+  messageCalls += 1;
+  assert.equal(typeof x, "number");
+  assert.equal(typeof y, "number");
+});
+guardedMessage(trustedEvent, 10, 20);
+for (const event of attacks) guardedMessage(event, 10, 20);
+assert.equal(messageCalls, 1, "one-way high-frequency movement IPC accepts only the trusted main renderer");
 
 assert.equal(isBoundedString("valid command", 4000), true);
 assert.equal(isBoundedString("", 4000), false, "empty text fields are rejected");
