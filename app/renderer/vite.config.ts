@@ -11,5 +11,12 @@ export default defineConfig({
   build: {
     outDir: resolve(import.meta.dirname, "../../dist/renderer"),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        index: resolve(import.meta.dirname, "index.html"),
+        orb: resolve(import.meta.dirname, "orb.html"),
+        menu: resolve(import.meta.dirname, "menu.html"),
+      },
+    },
   },
 });

@@ -5,7 +5,7 @@ import type { IpcMainInvokeEvent } from "electron";
  * exact local entry point. Main-process handlers must all use this wrapper.
  */
 export function guardTrustedRendererIpc<TArgs extends unknown[], TResult>(
-  trustedRendererUrl: string,
+  trustedRendererUrl: string | readonly string[],
   handler: (event: IpcMainInvokeEvent, ...args: TArgs) => TResult
 ): (event: IpcMainInvokeEvent, ...args: TArgs) => TResult {
   return (event, ...args) => {
@@ -17,8 +17,10 @@ export function guardTrustedRendererIpc<TArgs extends unknown[], TResult>(
   };
 }
 
-export function isTrustedRendererUrl(trustedRendererUrl: string, candidateUrl: string): boolean {
-  return candidateUrl === trustedRendererUrl;
+export function isTrustedRendererUrl(trustedRendererUrl: string | readonly string[], candidateUrl: string): boolean {
+  return typeof trustedRendererUrl === "string"
+    ? candidateUrl === trustedRendererUrl
+    : trustedRendererUrl.includes(candidateUrl);
 }
 
 export function isBoundedString(

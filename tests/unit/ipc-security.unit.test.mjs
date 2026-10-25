@@ -18,6 +18,7 @@ const attacks = [
   { senderFrame: { url: "https://attacker.example/" }, sender: { mainFrame: { url: "https://attacker.example/" } } },
   { senderFrame: { url: "file:///opt/ve/dist/renderer/other.html" }, sender: { mainFrame: { url: "file:///opt/ve/dist/renderer/other.html" } } },
   { senderFrame: { url: trustedUrl }, sender: { mainFrame: { url: "file:///opt/ve/dist/renderer/other.html" } } },
+  { senderFrame: { url: "file:///opt/ve/dist/renderer/orb.html" }, sender: { mainFrame: { url: "file:///opt/ve/dist/renderer/orb.html" } } },
   { senderFrame: null, sender: { mainFrame } },
 ];
 
@@ -34,3 +35,5 @@ assert.equal(isBoundedString("x".repeat(4001), 4000, true), false, "oversized IP
 assert.equal(isBoundedString({ toString: () => "valid" }, 4000), false, "objects cannot masquerade as text payloads");
 assert.equal(isTrustedRendererUrl(trustedUrl, trustedUrl), true, "the exact local entry point is trusted");
 assert.equal(isTrustedRendererUrl(trustedUrl, "https://attacker.example/"), false, "remote navigation is rejected");
+assert.equal(isTrustedRendererUrl([trustedUrl, "file:///opt/ve/dist/renderer/orb.html"], "file:///opt/ve/dist/renderer/orb.html"), true, "an explicitly allowed launcher page is trusted");
+assert.equal(isTrustedRendererUrl([trustedUrl, "file:///opt/ve/dist/renderer/orb.html"], "file:///opt/ve/dist/renderer/unknown.html"), false, "other local files are not implicitly trusted");

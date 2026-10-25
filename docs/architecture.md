@@ -4,14 +4,14 @@
 
 Ve's target architecture is a three-tier, local-first system. Networked federation is optional future work; the current implementation does not meet all of these target properties:
 
-1. **Native Desktop Shell & UI Layer** (Electron + React) — unobtrusive system tray presence with instant global hotkey access.
+1. **Native Desktop Shell & UI Layer** (Electron + React) — a user-positioned floating launcher, system tray recovery, and an on-demand chat panel.
 2. **On-Device SLM & Orchestration Brain** (10–20M parameter model + Deterministic Rules) — sub-100ms intent understanding and parameter extraction without cloud latency or privacy risks.
 3. **Execution & Automation Engine** (OS System Bridges + Browser Automation) — sandboxed, policy-governed execution of desktop actions with local learning loops.
 
 ```mermaid
 flowchart TD
-    User([User Text now / Voice planned]) --> TrayUI[Tray Shell & Frameless Popup]
-    TrayUI -->|Typed IPC| MainCoord[Main Process Coordinator]
+    User([User Text now / Voice planned]) --> TrayUI[Floating Orb + Tray + Chat Popup]
+    TrayUI -->|Validated IPC| MainCoord[Main Process Coordinator]
     
     subgraph Brain ["On-Device Brain"]
         MainCoord --> SLM[10-20M On-Device SLM Engine]

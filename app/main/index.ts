@@ -3,7 +3,9 @@ import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createTray } from "./tray.js";
 import { showPopup, togglePopupFromShortcut } from "./popupWindow.js";
+import { hideOrb, getOrbPosition, isOrbVisible, moveOrb, saveOrbPosition, setOrbMenuVisible, showOrb } from "./orbWindow.js";
 import { guardTrustedRendererIpc, isBoundedString } from "./ipcSecurity.js";
+import { hideLauncherUsesTaskbarFallback } from "./orbPolicy.js";
 import { executeUserInput } from "../core/intentParser/index.js";
 import {
   listMemories,
@@ -18,12 +20,16 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const trustedRendererUrl = pathToFileURL(path.join(__dirname, "../renderer/index.html")).href;
+const trustedOrbUrl = pathToFileURL(path.join(__dirname, "../renderer/orb.html")).href;
+const trustedMenuUrl = pathToFileURL(path.join(__dirname, "../renderer/menu.html")).href;
+const trustedLauncherUrls = [trustedOrbUrl, trustedMenuUrl];
 
 function registerRendererIpc<TArgs extends unknown[], TResult>(
   channel: string,
-  handler: (event: IpcMainInvokeEvent, ...args: TArgs) => TResult
+  handler: (event: IpcMainInvokeEvent, ...args: TArgs) => TResult,
+  trustedUrls: string | readonly string[] = trustedRendererUrl
 ): void {
-  ipcMain.handle(channel, guardTrustedRendererIpc(trustedRendererUrl, handler));
+  ipcMain.handle(channel, guardTrustedRendererIpc(trustedUrls, handler));
 }
 
 // Only one tray process may own the shortcut and popup lifecycle.
@@ -31,7 +37,10 @@ const ownsSingleInstanceLock = app.requestSingleInstanceLock();
 let tray: Tray | null = null;
 
 function openFromSystem(): void {
-  if (tray) showPopup(tray);
+  if (tray) {
+    showOrb(tray);
+    showPopup(tray);
+  }
 }
 
 if (!ownsSingleInstanceLock) {
@@ -50,14 +59,14 @@ if (!ownsSingleInstanceLock) {
     app.dock?.hide();
 
     const shortcutRegistered = globalShortcut.register("CommandOrControl+Shift+Space", () => {
-      if (tray) togglePopupFromShortcut(tray);
+      if (!tray) return;
+      if (!isOrbVisible()) showOrb(tray);
+      else togglePopupFromShortcut(tray);
     });
     if (!shortcutRegistered) console.warn("Ve could not register CommandOrControl+Shift+Space.");
 
     tray = createTray(shortcutRegistered);
-    // Starting Ve is an explicit user action. Show its taskbar window so it
-    // remains discoverable on desktops that do not expose tray icons.
-    showPopup(tray);
+    showOrb(tray);
   }).catch((error) => {
     console.error("Ve failed during startup:", error);
     app.quit();
@@ -107,3 +116,27 @@ registerRendererIpc("ve:delete-contact", (_event, id: unknown) => {
 });
 registerRendererIpc("ve:get-prediction-state", () => getPredictionState());
 registerRendererIpc("ve:clear-behavior", () => clearBehavior());
+
+registerRendererIpc("ve:orb-menu-visible", (_event, visible: unknown) => {
+  if (typeof visible !== "boolean") throw new Error("Invalid launcher menu state.");
+  setOrbMenuVisible(visible);
+}, trustedLauncherUrls);
+registerRendererIpc("ve:orb-open-chat", () => {
+  setOrbMenuVisible(false);
+  if (tray) showPopup(tray);
+}, trustedLauncherUrls);
+registerRendererIpc("ve:orb-hide", () => {
+  setOrbMenuVisible(false);
+  hideOrb();
+  // Linux tray hosts are inconsistent; keep Ve reachable through its normal
+  // taskbar window when the launcher is hidden there.
+  if (tray && hideLauncherUsesTaskbarFallback(process.platform)) showPopup(tray);
+}, trustedLauncherUrls);
+registerRendererIpc("ve:orb-get-position", () => getOrbPosition(), trustedLauncherUrls);
+registerRendererIpc("ve:orb-move", (_event, x: unknown, y: unknown) => {
+  if (typeof x !== "number" || !Number.isFinite(x) || typeof y !== "number" || !Number.isFinite(y)) {
+    throw new Error("Invalid launcher position.");
+  }
+  return moveOrb({ x: Math.round(x), y: Math.round(y) });
+}, trustedLauncherUrls);
+registerRendererIpc("ve:orb-save-position", () => saveOrbPosition(), trustedLauncherUrls);

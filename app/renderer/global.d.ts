@@ -15,6 +15,13 @@ declare global {
     deleteContact(id: string): Promise<void>;
     getPredictionState(): Promise<{ sampleCount: number; suggestions: string[] }>;
     clearBehavior(): Promise<void>;
+    setOrbMenuVisible(visible: boolean): Promise<void>;
+    orbOpenChat(): Promise<void>;
+    orbHide(): Promise<void>;
+    getOrbPosition(): Promise<{ x: number; y: number }>;
+    moveOrb(x: number, y: number): Promise<{ x: number; y: number }>;
+    orbSavePosition(): Promise<void>;
+    onOrbMenuState(callback: (visible: boolean) => void): () => void;
   }
 
   interface Window {

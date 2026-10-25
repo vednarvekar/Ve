@@ -1,8 +1,10 @@
 import { BrowserWindow, screen, type Tray } from "electron";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import * as fs from "node:fs";
 import { shouldDismissPopupAfterBlur } from "./popupFocusPolicy.js";
 import { isTrustedRendererUrl } from "./ipcSecurity.js";
+import { isWslEnvironment, visibleWorkArea } from "./orbPolicy.js";
 
 const WINDOW_WIDTH = 550;
 const WINDOW_HEIGHT = 600;
@@ -16,21 +18,29 @@ let shouldShowPopup = false;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const trustedRendererUrl = pathToFileURL(path.join(__dirname, "../renderer/index.html")).href;
 
+function detectWslHost(): boolean {
+  let kernelVersion = "";
+  try {
+    kernelVersion = fs.readFileSync("/proc/version", "utf8");
+  } catch {
+    // On Windows and macOS, WSL-specific insets are not needed.
+  }
+  return isWslEnvironment(process.env, kernelVersion);
+}
+
+const isWslHost = detectWslHost();
+
 function windowBounds(tray: Tray): { x: number; y: number; width: number; height: number } {
   const trayBounds = tray.getBounds();
   const display = screen.getDisplayNearestPoint({
     x: trayBounds.x + Math.floor(trayBounds.width / 2),
     y: trayBounds.y + Math.floor(trayBounds.height / 2),
   });
-  const workArea = display.workArea;
+  const workArea = visibleWorkArea(display.workArea, display.bounds, isWslHost);
   const width = Math.max(1, Math.min(WINDOW_WIDTH, workArea.width - WINDOW_MARGIN * 2));
   const height = Math.max(1, Math.min(WINDOW_HEIGHT, workArea.height - WINDOW_MARGIN * 2));
   const x = workArea.x + workArea.width - width - WINDOW_MARGIN;
-  // Some WSL desktops report the full display instead of excluding the taskbar.
-  const displayBottom = display.bounds.y + display.bounds.height;
-  const workAreaBottom = workArea.y + workArea.height;
-  const wslTaskbarInset = process.env.WSL_DISTRO_NAME && workAreaBottom >= displayBottom ? 48 : 0;
-  const y = workAreaBottom - wslTaskbarInset - height - WINDOW_MARGIN;
+  const y = workArea.y + workArea.height - height - WINDOW_MARGIN;
 
   return { x: Math.round(x), y: Math.round(y), width, height };
 }
@@ -50,7 +60,7 @@ export function createPopupWindow(tray: Tray): BrowserWindow {
   popupReady = false;
   const window = new BrowserWindow({
     ...windowBounds(tray),
-    icon: path.join(__dirname, "../assets/tray-icon.png"),
+    icon: path.join(__dirname, "../assets/app-icon.png"),
     title: "Ve",
     show: false,
     frame: false,

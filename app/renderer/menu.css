@@ -1,0 +1,81 @@
+html,
+body,
+#menu-root {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+  font-family: Arial, sans-serif;
+  color: #f2f2f2;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+.launcher-menu {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 204px;
+  height: 74px;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(31, 31, 31, 0.97);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.46);
+}
+
+.menu-action {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 54px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #f2f2f2;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.menu-action:hover:not(:disabled),
+.menu-action:focus-visible {
+  border-color: rgba(91, 141, 239, 0.6);
+  background: #353b49;
+  outline: none;
+}
+
+.menu-action svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.menu-action:disabled {
+  color: #8d8d8d;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -2,6 +2,7 @@ import { app, Menu, nativeImage, Tray } from "electron";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createPopupWindow, showPopup, togglePopupFromShortcut } from "./popupWindow.js";
+import { isOrbVisible, showOrb } from "./orbWindow.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -11,7 +12,10 @@ export function createTray(shortcutRegistered: boolean): Tray {
   const tray = new Tray(icon);
   tray.setToolTip("Ve");
 
-  tray.on("click", () => togglePopupFromShortcut(tray));
+  tray.on("click", () => {
+    if (!isOrbVisible()) showOrb(tray);
+    else togglePopupFromShortcut(tray);
+  });
 
   const shortcutLabel = process.platform === "darwin" ? "⌘+Shift+Space" : "Ctrl+Shift+Space";
   const contextMenu = Menu.buildFromTemplate([
@@ -21,6 +25,7 @@ export function createTray(shortcutRegistered: boolean): Tray {
       label: shortcutRegistered ? `Open Ve (${shortcutLabel})` : "Open Ve",
       click: () => showPopup(tray),
     },
+    { label: "Show floating launcher", click: () => showOrb(tray) },
     { type: "separator" },
     { label: "Quit", click: () => app.quit() },
   ]);
