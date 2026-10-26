@@ -22,6 +22,7 @@ declare global {
     getOrbPosition(): Promise<{ x: number; y: number }>;
     moveOrb(x: number, y: number): Promise<{ x: number; y: number }>;
     dragOrb(x: number, y: number): void;
+    finishOrbCenterDrag(): void;
     orbSavePosition(): Promise<void>;
     onOrbMenuState(callback: (visible: boolean) => void): () => void;
   }

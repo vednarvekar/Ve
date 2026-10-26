@@ -59,3 +59,7 @@ export function hideLauncherUsesTaskbarFallback(platform: string): boolean {
 export function shouldDismissOrbMenuAfterBlur(menuFocused: boolean, orbFocused: boolean): boolean {
   return !menuFocused && !orbFocused;
 }
+
+export function shouldPersistOrbPosition(centerDragActive: boolean): boolean {
+  return !centerDragActive;
+}

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { clampOrbPosition, didPointerMoveBeyondThreshold, hideLauncherUsesTaskbarFallback, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, visibleWorkArea } from "../../dist/main/orbPolicy.js";
+import { clampOrbPosition, didPointerMoveBeyondThreshold, hideLauncherUsesTaskbarFallback, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, shouldPersistOrbPosition, visibleWorkArea } from "../../dist/main/orbPolicy.js";
 
 const workArea = { x: 0, y: 0, width: 1920, height: 1080 };
 
@@ -20,6 +20,8 @@ assert.equal(hideLauncherUsesTaskbarFallback("linux"), true, "hiding the orb kee
 assert.equal(hideLauncherUsesTaskbarFallback("win32"), false, "Windows can hide the orb to its system tray");
 assert.equal(shouldDismissOrbMenuAfterBlur(false, true), false, "focusing the orb during a drag keeps its menu open");
 assert.equal(shouldDismissOrbMenuAfterBlur(false, false), true, "moving focus outside Ve dismisses the menu");
+assert.equal(shouldPersistOrbPosition(true), false, "center-drag frames do not reset disk persistence");
+assert.equal(shouldPersistOrbPosition(false), true, "native movement still schedules debounced position persistence");
 assert.equal(isWslEnvironment({ WSL_DISTRO_NAME: "Ubuntu" }, "Linux"), true, "WSL environment variables identify WSL");
 assert.equal(isWslEnvironment({}, "Linux version 6.6.87.2-microsoft-standard-WSL2"), true, "the Linux kernel identifies WSL when host variables are missing");
 assert.deepEqual(

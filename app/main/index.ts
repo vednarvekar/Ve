@@ -3,7 +3,7 @@ import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createTray } from "./tray.js";
 import { hidePopup, showPopup, togglePopupFromShortcut } from "./popupWindow.js";
-import { hideOrb, getOrbPosition, isOrbVisible, moveOrb, saveOrbPosition, setOrbMenuVisible, showOrb } from "./orbWindow.js";
+import { hideOrb, getOrbPosition, isOrbVisible, moveOrb, moveOrbDuringCenterDrag, finishOrbCenterDrag, saveOrbPosition, setOrbMenuVisible, showOrb } from "./orbWindow.js";
 import { guardTrustedRendererIpc, guardTrustedRendererMessage, isBoundedString } from "./ipcSecurity.js";
 import { hideLauncherUsesTaskbarFallback } from "./orbPolicy.js";
 import { executeUserInput } from "../core/intentParser/index.js";
@@ -147,6 +147,7 @@ registerRendererIpc("ve:orb-move", (_event, x: unknown, y: unknown) => {
 ipcMain.on("ve:orb-drag-position", guardTrustedRendererMessage(trustedOrbUrl, (_event, x: unknown, y: unknown) => {
   if (typeof x !== "number" || !Number.isFinite(x) || Math.abs(x) > 1_000_000 ||
       typeof y !== "number" || !Number.isFinite(y) || Math.abs(y) > 1_000_000) return;
-  moveOrb({ x: Math.round(x), y: Math.round(y) });
+  moveOrbDuringCenterDrag({ x: Math.round(x), y: Math.round(y) });
 }));
+ipcMain.on("ve:orb-drag-finish", guardTrustedRendererMessage(trustedOrbUrl, () => finishOrbCenterDrag()));
 registerRendererIpc("ve:orb-save-position", () => saveOrbPosition(), trustedLauncherUrls);

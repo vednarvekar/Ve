@@ -2,7 +2,7 @@ import { app, BrowserWindow, screen, type Tray } from "electron";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { clampOrbPosition, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, visibleWorkArea as applyVisibleWorkArea, type OrbPosition } from "./orbPolicy.js";
+import { clampOrbPosition, isWslEnvironment, launcherMenuBounds, shouldDismissOrbMenuAfterBlur, shouldPersistOrbPosition, visibleWorkArea as applyVisibleWorkArea, type OrbPosition } from "./orbPolicy.js";
 import { isTrustedRendererUrl } from "./ipcSecurity.js";
 
 const ORB_SIZE = 68;
@@ -20,6 +20,7 @@ let menuRequested = false;
 let savedPosition: OrbPosition | null = null;
 let displayListenersRegistered = false;
 let positionSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let centerDragActive = false;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const orbUrl = pathToFileURL(path.join(__dirname, "../renderer/orb.html")).href;
 const menuUrl = pathToFileURL(path.join(__dirname, "../renderer/menu.html")).href;
@@ -153,6 +154,7 @@ export function createOrbWindow(tray: Tray): BrowserWindow {
       const bounds = menuBounds(position);
       menu.setPosition(bounds.x, bounds.y, false);
     }
+    if (!shouldPersistOrbPosition(centerDragActive)) return;
     if (positionSaveTimer) clearTimeout(positionSaveTimer);
     positionSaveTimer = setTimeout(() => {
       positionSaveTimer = null;
@@ -287,10 +289,17 @@ export function moveOrb(position: OrbPosition): OrbPosition {
   const clamped = clampToVisibleArea(position);
   if (!orb || orb.isDestroyed()) return clamped;
   orb.setPosition(clamped.x, clamped.y, false);
-  if (menu && !menu.isDestroyed() && menu.isVisible()) {
-    menu.setPosition(menuBounds(clamped).x, menuBounds(clamped).y, false);
-  }
   return clamped;
+}
+
+export function moveOrbDuringCenterDrag(position: OrbPosition): OrbPosition {
+  centerDragActive = true;
+  return moveOrb(position);
+}
+
+export function finishOrbCenterDrag(): void {
+  centerDragActive = false;
+  saveOrbPosition();
 }
 
 export function saveOrbPosition(): void {

@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("ve", {
   getOrbPosition: () => ipcRenderer.invoke("ve:orb-get-position"),
   moveOrb: (x: number, y: number): Promise<{ x: number; y: number }> => ipcRenderer.invoke("ve:orb-move", x, y),
   dragOrb: (x: number, y: number): void => ipcRenderer.send("ve:orb-drag-position", x, y),
+  finishOrbCenterDrag: (): void => ipcRenderer.send("ve:orb-drag-finish"),
   orbSavePosition: () => ipcRenderer.invoke("ve:orb-save-position"),
   onOrbMenuState: (callback: (visible: boolean) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, visible: unknown) => {

@@ -34,7 +34,8 @@ function OrbApp() {
     if (!drag.latestPosition) return;
     dragState.current = null;
     const { x, y } = drag.latestPosition;
-    void window.ve.moveOrb(x, y).then(() => window.ve.orbSavePosition());
+    window.ve.dragOrb(x, y);
+    window.ve.finishOrbCenterDrag();
   }
 
   function queueCenterDrag(drag: CenterDrag) {
