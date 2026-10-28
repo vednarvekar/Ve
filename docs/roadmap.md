@@ -71,7 +71,7 @@ flowchart LR
 
 ### Step 1.3 — Add the required floating assistant launcher
 
-- [ ] Reopened — the orb only moves from its outer edge, and the taskbar fallback has no visible way to restore the orb. Keep native edge dragging, add a low-overhead center drag path, and add a taskbar "Show orb" action.
+- [ ] Awaiting user desktop verification — the latest code adds center dragging and a taskbar "Show orb" action, but the user has not yet confirmed center smoothness or that the menu stays attached after repeated interactions.
 **Depends on:** 1.2.
 **Goal:** Make the movable orb Ve's primary visible entry point while retaining the system tray for the user's explicit hide/minimize state and recovery.
 
@@ -85,7 +85,7 @@ flowchart LR
 
 ### Step 1.4 — Select the local voice-recognition runtime
 
-- [ ] In progress — official-source shortlist and benchmark plan underway; target-hardware speech measurements are still required. Proceeding with this independent research slice while Step 1.3's desktop acceptance remains open at the user's direction.
+- [ ] In progress — [voice runtime evaluation](voice-runtime-evaluation.md) records the official-source shortlist and repeatable benchmark plan. No runtime is selected until the language set, consented command samples, target-hardware measurements, and native packaging checks are complete. Research is proceeding while Step 1.3's desktop acceptance remains open at the user's direction.
 **Depends on:** 1.1.
 **Goal:** Choose a speech recognizer that fits Ve's privacy, language, and low-resource targets before enabling the launcher microphone.
 
