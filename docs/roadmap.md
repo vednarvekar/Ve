@@ -85,7 +85,7 @@ flowchart LR
 
 ### Step 1.4 — Select the local voice-recognition runtime
 
-- [ ] Mark complete when the acceptance checks below pass.
+- [ ] In progress — official-source shortlist and benchmark plan underway; target-hardware speech measurements are still required. Proceeding with this independent research slice while Step 1.3's desktop acceptance remains open at the user's direction.
 **Depends on:** 1.1.
 **Goal:** Choose a speech recognizer that fits Ve's privacy, language, and low-resource targets before enabling the launcher microphone.
 
