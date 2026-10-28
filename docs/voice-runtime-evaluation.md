@@ -35,7 +35,7 @@ Published model sizes and benchmark scores are source-reported, not Ve measureme
 
 | Field | Result |
 |---|---|
-| Target machine / OS | Not measured; current repo notes identify WSL2 x86_64, but no release target is declared |
+| Available benchmark environment | WSL2 x86_64; 11th Gen Intel Core i5-1135G7 (4 cores / 8 threads), 7.6 GiB available memory, Node.js 24.15.0. This is the development host, not a declared release target; WSL microphone and Windows Electron packaging are unverified. |
 | Languages | Awaiting user's language preference |
 | Consented speech set | Not recorded |
 | Native packaging checks | Not run |
