@@ -31,6 +31,43 @@ Published model sizes and benchmark scores are source-reported, not Ve measureme
 7. Keep transcripts in an editable composer. Never route a transcript straight to an executor. The user must press Send; execution must still pass the same command policy as typed input.
 8. Record raw results, limitations, and a decision in this document. If the target OS, language, or licensing is unresolved, leave Step 1.4 open.
 
+### English prompt set (draft)
+
+Use these only if English is included in the first-release language set. The speaker reads the sentence naturally without seeing candidate output. These prompts evaluate transcription and extraction of key words only; they do not authorize Ve to perform any action.
+
+| ID | Spoken prompt | Critical words / slots to score |
+|---|---|---|
+| E01 | Open Calculator. | app = Calculator |
+| E02 | Open Chrome. | app = Chrome |
+| E03 | Open YouTube. | site = YouTube |
+| E04 | Search YouTube for beginner guitar lessons. | site = YouTube; query = beginner guitar lessons |
+| E05 | Find where The Mentalist is streaming. | title = The Mentalist |
+| E06 | Play Blinding Lights on Spotify. | track = Blinding Lights; app = Spotify |
+| E07 | Play my focus playlist on Spotify. | playlist = focus; app = Spotify |
+| E08 | Find a podcast about sleep. | media type = podcast; query = sleep |
+| E09 | Find my most recent PDF. | file type = PDF; recency = most recent |
+| E10 | Open the file named invoice April twenty twenty-six dot PDF. | filename = invoice April 2026.pdf |
+| E11 | Show the pictures in Downloads. | file type = images; folder = Downloads |
+| E12 | Open the screenshot I saved yesterday. | file type = screenshot; recency = yesterday |
+| E13 | Draft a WhatsApp message to Sam saying, "I'll arrive in ten minutes." | app = WhatsApp; recipient = Sam; message = I'll arrive in ten minutes |
+| E14 | Prepare to send invoice dot PDF to Sam on WhatsApp. | filename = invoice.pdf; recipient = Sam; app = WhatsApp |
+| E15 | Search Netflix for The Mentalist. | site = Netflix; title = The Mentalist |
+| E16 | Open Spotify and search for calm instrumental music. | app = Spotify; query = calm instrumental music |
+| E17 | Open the latest PDF in Downloads. | file type = PDF; folder = Downloads; recency = latest |
+| E18 | Go to netflix dot com. | URL = netflix.com |
+| E19 | Cancel. | cancel intent |
+| E20 | What can you do? | help intent |
+
+Record two natural takes per prompt in quiet conditions and two in ordinary room noise, if the speaker agrees. Add other speakers only with their explicit consent. Before scoring, keep a copy of the reference text and score files separate from the recognizer output. Add Hindi / code-switched prompt translations only after the supported language set is decided; translations must be reviewed by a fluent speaker rather than machine-translated and assumed correct.
+
+For negative audio controls, include at least ten seconds each of room noise and silence. The UI must still require push-to-talk and explicit Send; record whether the recognizer produces text, but count no transcript as an action because execution is out of scope for this benchmark.
+
+### Per-clip score template
+
+| Clip ID | Candidate / version | Reference text | Transcript | WER / CER | Intent exact? | Critical slots exact? | Final latency | Peak RSS | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+|  |  |  |  |  |  |  |  |  |  |
+
 ### Results
 
 | Field | Result |
