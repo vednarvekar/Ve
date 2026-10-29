@@ -5,6 +5,7 @@ import { createTray } from "./tray.js";
 import { hidePopup, showPopup, togglePopupFromShortcut } from "./popupWindow.js";
 import { hideOrb, getOrbPosition, isOrbVisible, moveOrb, moveOrbDuringCenterDrag, finishOrbCenterDrag, saveOrbPosition, setOrbMenuVisible, showOrb } from "./orbWindow.js";
 import { guardTrustedRendererIpc, guardTrustedRendererMessage, isBoundedString } from "./ipcSecurity.js";
+import { trustedRendererUrlsForChannel } from "./rendererCapabilityPolicy.js";
 import { hideLauncherUsesTaskbarFallback } from "./orbPolicy.js";
 import { executeUserInput } from "../core/intentParser/index.js";
 import {
@@ -22,13 +23,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const trustedRendererUrl = pathToFileURL(path.join(__dirname, "../renderer/index.html")).href;
 const trustedOrbUrl = pathToFileURL(path.join(__dirname, "../renderer/orb.html")).href;
 const trustedMenuUrl = pathToFileURL(path.join(__dirname, "../renderer/menu.html")).href;
-const trustedLauncherUrls = [trustedOrbUrl, trustedMenuUrl];
+const rendererUrls = { chat: trustedRendererUrl, orb: trustedOrbUrl, menu: trustedMenuUrl } as const;
 
 function registerRendererIpc<TArgs extends unknown[], TResult>(
   channel: string,
-  handler: (event: IpcMainInvokeEvent, ...args: TArgs) => TResult,
-  trustedUrls: string | readonly string[] = trustedRendererUrl
+  handler: (event: IpcMainInvokeEvent, ...args: TArgs) => TResult
 ): void {
+  const trustedUrls = trustedRendererUrlsForChannel(channel, rendererUrls);
   ipcMain.handle(channel, guardTrustedRendererIpc(trustedUrls, handler));
 }
 
@@ -120,34 +121,40 @@ registerRendererIpc("ve:clear-behavior", () => clearBehavior());
 registerRendererIpc("ve:orb-menu-visible", (_event, visible: unknown) => {
   if (typeof visible !== "boolean") throw new Error("Invalid launcher menu state.");
   setOrbMenuVisible(visible);
-}, trustedLauncherUrls);
+});
 registerRendererIpc("ve:orb-open-chat", () => {
   setOrbMenuVisible(false);
   if (tray) showPopup(tray);
-}, trustedLauncherUrls);
+});
 registerRendererIpc("ve:orb-hide", () => {
   setOrbMenuVisible(false);
   hideOrb();
   // Linux tray hosts are inconsistent; keep Ve reachable through its normal
   // taskbar window when the launcher is hidden there.
   if (tray && hideLauncherUsesTaskbarFallback(process.platform)) showPopup(tray);
-}, trustedLauncherUrls);
+});
 registerRendererIpc("ve:show-orb", () => {
   if (!tray) return;
   showOrb(tray);
   hidePopup();
 });
-registerRendererIpc("ve:orb-get-position", () => getOrbPosition(), trustedLauncherUrls);
+registerRendererIpc("ve:orb-get-position", () => getOrbPosition());
 registerRendererIpc("ve:orb-move", (_event, x: unknown, y: unknown) => {
   if (typeof x !== "number" || !Number.isFinite(x) || typeof y !== "number" || !Number.isFinite(y)) {
     throw new Error("Invalid launcher position.");
   }
   return moveOrb({ x: Math.round(x), y: Math.round(y) });
-}, trustedLauncherUrls);
-ipcMain.on("ve:orb-drag-position", guardTrustedRendererMessage(trustedOrbUrl, (_event, x: unknown, y: unknown) => {
-  if (typeof x !== "number" || !Number.isFinite(x) || Math.abs(x) > 1_000_000 ||
-      typeof y !== "number" || !Number.isFinite(y) || Math.abs(y) > 1_000_000) return;
-  moveOrbDuringCenterDrag({ x: Math.round(x), y: Math.round(y) });
-}));
-ipcMain.on("ve:orb-drag-finish", guardTrustedRendererMessage(trustedOrbUrl, () => finishOrbCenterDrag()));
-registerRendererIpc("ve:orb-save-position", () => saveOrbPosition(), trustedLauncherUrls);
+});
+ipcMain.on("ve:orb-drag-position", guardTrustedRendererMessage(
+  trustedRendererUrlsForChannel("ve:orb-drag-position", rendererUrls),
+  (_event, x: unknown, y: unknown) => {
+    if (typeof x !== "number" || !Number.isFinite(x) || Math.abs(x) > 1_000_000 ||
+        typeof y !== "number" || !Number.isFinite(y) || Math.abs(y) > 1_000_000) return;
+    moveOrbDuringCenterDrag({ x: Math.round(x), y: Math.round(y) });
+  }
+));
+ipcMain.on("ve:orb-drag-finish", guardTrustedRendererMessage(
+  trustedRendererUrlsForChannel("ve:orb-drag-finish", rendererUrls),
+  () => finishOrbCenterDrag()
+));
+registerRendererIpc("ve:orb-save-position", () => saveOrbPosition());

@@ -97,13 +97,13 @@ flowchart LR
 
 ### Step 2.1 — Define Ve's threat model and capability permissions
 
-- [ ] Mark complete when the acceptance checks below pass.
+- [x] Complete — documented current assets, trust boundaries, abuse cases, residual limits, and per-channel IPC capability policy; main-process registration now requires every channel to have an explicit renderer-role allowlist.
 **Depends on:** 1.1.
 **Goal:** Limit what a compromised renderer, malicious model output, hostile webpage, or compromised host can make Ve do.
 
 **Work:** Document assets and threats: local files, contacts, messages, app sessions, and user identity. Define capability-based permissions, IPC sender validation, main-process enforcement, consent boundaries, data-flow limits, and confirmation requirements. Explicitly prohibit arbitrary shell/PowerShell, admin elevation, broad filesystem crawling, unprompted credential access, and model-selected paths. Treat web content, app metadata, and model output as untrusted input. Note that a compromised host cannot be made foolproof; minimize Ve's additional access and blast radius.
 
-**Implementation status (2026-10-24):** As an early security slice, every renderer IPC handler now rejects requests unless they originate from Ve's exact local main frame; command and personal-data payloads have bounded string validation. The renderer is sandboxed, remote navigation is blocked, and popup creation requests are denied. Automated tests cover untrusted frames/URLs, malformed payloads, unsafe navigation schemes, and shell-like app names. The full threat model, capability permission policy, confirmation rules, and security review in this step are still outstanding.
+**Implementation status (2026-10-29):** The early security slice validates exact local main-frame sender URLs, bounds command/personal-data payloads, sandboxes renderers, blocks remote navigation, and denies popup creation. `app/main/rendererCapabilityPolicy.ts` now declares the allowed chat/orb/menu renderer role for each privileged IPC channel; main-process handler registration fails closed when a channel lacks a policy. Tests require every channel exposed by preload and registered in main to appear in the policy, and exercise cross-window rejection. The initial threat model and capability inventory are in [security-threat-model.md](security-threat-model.md). This step establishes the boundary, not complete protection: the chat renderer retains its chat capabilities if compromised, and main-enforced typed action/confirmation policy is Step 2.2.
 
 **Done when:** A threat model maps each capability to least-privilege access and abuse cases; every privileged operation has a main-process policy; no renderer/model input can directly invoke a generic command or filesystem API; the security limits are documented without claiming perfect protection.
 
