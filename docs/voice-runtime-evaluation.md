@@ -1,12 +1,12 @@
 # Local voice runtime evaluation
 
-**Status:** Research shortlist only. No recognizer has been selected. Live measurements on Ve's target computer and consented speech are required before Step 1.4 can be marked complete.
+**Status:** English is the user-selected first benchmark language (2026-10-29). Research shortlist only; no recognizer has been selected. Live measurements on Ve's target computer and consented speech are required before Step 1.4 can be marked complete.
 
 ## Recommendation before measurement
 
-Keep `sherpa-onnx-node` with streaming Zipformer English 20M int8 as the first implementation candidate only if English is the first supported language. It fits the existing Node/Electron stack, exposes streaming recognition, and its int8 encoder/decoder/joiner files total about 43.6 MB. The upstream model page identifies it as English-only and trained on LibriSpeech, so its performance on the user's accent and Ve command names is unknown. Treat this as a candidate, not a decision.
+Keep `sherpa-onnx-node` with streaming Zipformer English 20M int8 as the first implementation candidate for the selected English benchmark. It fits the existing Node/Electron stack, exposes streaming recognition, and its int8 encoder/decoder/joiner files total about 43.6 MB. The upstream model page identifies it as English-only and trained on LibriSpeech, so its performance on the user's accent and Ve command names is unknown. Treat this as a candidate, not a decision.
 
-If Hindi or Indian English is required in the first release, add Vosk's small Hindi and Indian English models to the same test set. Their published scores are from different evaluation corpora and cannot be compared directly with each other, Zipformer, or Whisper. Whisper tiny.en is a useful English accuracy comparison, but its 75 MiB model and native integration make it a less obvious low-overhead Electron choice.
+Keep Vosk small US English and Whisper tiny.en as English baselines. Include Vosk small Indian English only if the user wants it as an accent comparison; do not infer the user's accent from the development environment. Its published score is corpus-specific and weak, so it must earn inclusion through the Ve command set. Whisper tiny.en is a useful English accuracy comparison, but its 75 MiB model and native integration make it a less obvious low-overhead Electron choice. Hindi is outside the first benchmark scope.
 
 ## Candidate comparison
 
@@ -15,7 +15,6 @@ If Hindi or Indian English is required in the first release, add Vosk's small Hi
 | sherpa-onnx-node + Zipformer English 20M int8 | About 43.6 MB across int8 encoder, decoder, joiner; streaming | Native Node API; online recognition; npm package lists Linux x64, Windows x64, macOS x64/arm64; optional `node-cpal` microphone input | English-only LibriSpeech training; small-model accuracy warning; Linux shared-library path setup; Electron ASAR/native packaging and microphone capture unverified |
 | Vosk small US English | 40 MB model; streaming API; published WER 9.85 on LibriSpeech test-clean and 10.38 on TEDLIUM | Offline; Node bindings; Apache 2.0 model listing; lightweight runtime option | US English accent mismatch risk; scores are not Ve-command results; runtime memory and Electron packaging need measurement |
 | Vosk small Indian English | 36 MB model; published WER 49.05 on NPTEL Pure | Direct accent comparison candidate | That published score is weak and corpus-specific; evaluate carefully before considering shipping |
-| Vosk small Hindi | 42 MB model; published WER 20.89 IITM Challenge / 24.72 MUCS Challenge | Adds an offline Hindi candidate; Apache 2.0 listed | Not comparable to English scores; code-switching and app/product names need dedicated testing |
 | whisper.cpp tiny.en | 75 MiB model; English-only variant | MIT code and weights; mature C/C++ implementation; useful independent English baseline | Adds a C/C++ runtime or native wrapper to Electron; model is larger than the Zipformer int8 files; streaming behavior and package size need measurement |
 
 Published model sizes and benchmark scores are source-reported, not Ve measurements. The models were tested on different datasets and setups; use them to scope the shortlist, not rank accuracy.
@@ -23,7 +22,7 @@ Published model sizes and benchmark scores are source-reported, not Ve measureme
 ## Benchmark procedure
 
 1. Record the target machine and release platform: OS/version, CPU model/core count, RAM, architecture, microphone, and Electron version. Do not treat WSL results as Windows desktop packaging results.
-2. Confirm the first-release language set. Include each requested language and the user's ordinary accent/code-switching in the same comparison.
+2. Use English for this benchmark. Include the user's ordinary spoken English and product/app names; score any code-switched speech separately as exploratory until support for those languages is specified.
 3. Prepare a fixed, consented set of short Ve commands covering app/site launch, media requests, file lookup/opening, and message drafting. Include similar-sounding pairs, product/app names, silence, and ordinary room noise. Store audio only in a temporary local benchmark directory; never commit recordings or transcripts.
 4. Run each candidate on identical clips and settings. Run each model once to warm it, then make three measured passes. Record model/runtime versions, checksums, thread count, and whether decode is streaming or full-utterance.
 5. Record word error rate (WER; CER for Hindi where useful), exact intent and critical-slot match, incorrectly recognized actionable intent rate, silence/noise false-transcript rate, time to first partial and final transcript, real-time factor, peak RSS, steady CPU, model disk size, installed runtime size, and cold/warm startup.
@@ -58,13 +57,13 @@ Use these only if English is included in the first-release language set. The spe
 | E19 | Cancel. | cancel intent |
 | E20 | What can you do? | help intent |
 
-Record two natural takes per prompt in quiet conditions and two in ordinary room noise, if the speaker agrees. Add other speakers only with their explicit consent. Before scoring, keep a copy of the reference text and score files separate from the recognizer output. Add Hindi / code-switched prompt translations only after the supported language set is decided; translations must be reviewed by a fluent speaker rather than machine-translated and assumed correct.
+Record two natural takes per prompt in quiet conditions and two in ordinary room noise, if the speaker agrees. Add other speakers only with their explicit consent. Before scoring, keep a copy of the reference text and score files separate from the recognizer output. English is the initial benchmark scope; any Hindi or code-switched examples are exploratory and do not count against the English-only release target.
 
 For negative audio controls, include at least ten seconds each of room noise and silence. The UI must still require push-to-talk and explicit Send; record whether the recognizer produces text, but count no transcript as an action because execution is out of scope for this benchmark.
 
 ### Per-clip score template
 
-| Clip ID | Candidate / version | Reference text | Transcript | WER / CER | Intent exact? | Critical slots exact? | Final latency | Peak RSS | Notes |
+| Clip ID | Candidate / version | Reference text | Transcript | WER | Intent exact? | Critical slots exact? | Final latency | Peak RSS | Notes |
 |---|---|---|---|---|---|---|---|---|---|
 |  |  |  |  |  |  |  |  |  |  |
 
@@ -73,7 +72,7 @@ For negative audio controls, include at least ten seconds each of room noise and
 | Field | Result |
 |---|---|
 | Available benchmark environment | WSL2 x86_64; 11th Gen Intel Core i5-1135G7 (4 cores / 8 threads), 7.6 GiB available memory, Node.js 24.15.0. This is the development host, not a declared release target; WSL microphone and Windows Electron packaging are unverified. |
-| Languages | Awaiting user's language preference |
+| Languages | English first, selected by the user on 2026-10-29; Hindi is out of the first benchmark scope |
 | Consented speech set | Not recorded |
 | Native packaging checks | Not run |
 | Decision | Pending; no voice package or model added |
