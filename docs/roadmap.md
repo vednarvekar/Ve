@@ -85,7 +85,7 @@ flowchart LR
 
 ### Step 1.4 — Select the local voice-recognition runtime
 
-- [ ] In progress — English and Windows x64 + Linux x64 are confirmed as the initial voice benchmark scope. [Voice runtime evaluation](voice-runtime-evaluation.md) records the official-source shortlist, fixed prompt set, and scoring plan. No runtime is selected until consented command samples, target-hardware measurements, and native packaging checks on both targets are complete. Research is proceeding while Step 1.3's desktop acceptance remains open at the user's direction.
+- [ ] In progress — English and Windows x64 + Linux x64 are confirmed as the initial voice benchmark scope. An isolated sherpa WAV benchmark runner now measures transcription error, latency, real-time factor, CPU time, and process/model footprint. Its WSL2 smoke test passes a generated-silence negative control only; no recognizer is selected until consented speech command samples and native packaging checks on both targets are complete. Research is proceeding while Step 1.3's desktop acceptance remains open at the user's direction.
 **Depends on:** 1.1.
 **Goal:** Choose a speech recognizer that fits Ve's privacy, language, and low-resource targets before enabling the launcher microphone.
 

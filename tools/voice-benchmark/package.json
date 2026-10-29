@@ -1,0 +1,9 @@
+{
+  "name": "ve-voice-benchmark",
+  "private": true,
+  "type": "module",
+  "description": "Isolated, development-only ASR benchmark tooling for Ve.",
+  "dependencies": {
+    "sherpa-onnx-node": "2.0.1"
+  }
+}

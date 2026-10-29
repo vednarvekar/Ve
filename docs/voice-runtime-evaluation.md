@@ -4,7 +4,7 @@
 
 ## Recommendation before measurement
 
-Keep `sherpa-onnx-node` with streaming Zipformer English 20M int8 as the first implementation candidate for the selected English benchmark. It fits the existing Node/Electron stack, exposes streaming recognition, and its int8 encoder/decoder/joiner files total about 43.6 MB. The upstream model page identifies it as English-only and trained on LibriSpeech, so its performance on the user's accent and Ve command names is unknown. Treat this as a candidate, not a decision.
+Keep `sherpa-onnx-node` with streaming Zipformer English 20M int8 as the first implementation candidate for the selected English benchmark. It fits the existing Node/Electron stack and exposes streaming recognition. The inference configuration documented upstream uses an int8 encoder and joiner with an fp32 decoder, totaling about 45.2 MB of model files. The upstream model page identifies it as English-only and trained on LibriSpeech, so its performance on the user's accent and Ve command names is unknown. Treat this as a candidate, not a decision.
 
 Keep Vosk small US English and Whisper tiny.en as English baselines. Include Vosk small Indian English only if the user wants it as an accent comparison; do not infer the user's accent from the development environment. Its published score is corpus-specific and weak, so it must earn inclusion through the Ve command set. Whisper tiny.en is a useful English accuracy comparison, but its 75 MiB model and native integration make it a less obvious low-overhead Electron choice. Hindi is outside the first benchmark scope.
 
@@ -12,7 +12,7 @@ Keep Vosk small US English and Whisper tiny.en as English baselines. Include Vos
 
 | Candidate | Published footprint / capability | Advantages | Risks to measure |
 |---|---|---|---|
-| sherpa-onnx-node + Zipformer English 20M int8 | About 43.6 MB across int8 encoder, decoder, joiner; streaming | Native Node API; online recognition; npm package lists Linux x64, Windows x64, macOS x64/arm64; optional `node-cpal` microphone input | English-only LibriSpeech training; small-model accuracy warning; Linux shared-library path setup; Electron ASAR/native packaging and microphone capture unverified |
+| sherpa-onnx-node + Zipformer English 20M int8 | About 45.2 MB in the documented int8 encoder / fp32 decoder / int8 joiner configuration; streaming | Native Node API; online recognition; npm package lists Linux x64, Windows x64, macOS x64/arm64; optional `node-cpal` microphone input | English-only LibriSpeech training; small-model accuracy warning; Linux shared-library path setup; Electron ASAR/native packaging and microphone capture unverified |
 | Vosk small US English | 40 MB model; streaming API; published WER 9.85 on LibriSpeech test-clean and 10.38 on TEDLIUM | Offline; Node bindings; Apache 2.0 model listing; lightweight runtime option | US English accent mismatch risk; scores are not Ve-command results; runtime memory and Electron packaging need measurement |
 | Vosk small Indian English | 36 MB model; published WER 49.05 on NPTEL Pure | Direct accent comparison candidate | That published score is weak and corpus-specific; evaluate carefully before considering shipping |
 | whisper.cpp tiny.en | 75 MiB model; English-only variant | MIT code and weights; mature C/C++ implementation; useful independent English baseline | Adds a C/C++ runtime or native wrapper to Electron; model is larger than the Zipformer int8 files; streaming behavior and package size need measurement |
@@ -25,7 +25,7 @@ Published model sizes and benchmark scores are source-reported, not Ve measureme
 2. Use English for this benchmark. Include the user's ordinary spoken English and product/app names; score any code-switched speech separately as exploratory until support for those languages is specified.
 3. Prepare a fixed, consented set of short Ve commands covering app/site launch, media requests, file lookup/opening, and message drafting. Include similar-sounding pairs, product/app names, silence, and ordinary room noise. Store audio only in a temporary local benchmark directory; never commit recordings or transcripts.
 4. Run each candidate on identical clips and settings. Run each model once to warm it, then make three measured passes. Record model/runtime versions, checksums, thread count, and whether decode is streaming or full-utterance.
-5. Record word error rate (WER; CER for Hindi where useful), exact intent and critical-slot match, incorrectly recognized actionable intent rate, silence/noise false-transcript rate, time to first partial and final transcript, real-time factor, peak RSS, steady CPU, model disk size, installed runtime size, and cold/warm startup.
+5. Record word error rate (WER), exact intent and critical-slot match, silence/noise transcript rate, time to first partial and final transcript, real-time factor, RSS at process start/runtime load/model load/after inference, process CPU time, model disk size, installed runtime size, and cold/warm startup. The isolated runner is in [tools/voice-benchmark](../tools/voice-benchmark/README.md); it currently exercises sherpa only.
 6. Verify offline behavior with network disabled. Verify native packaging on the actual target OS, including microphone permission, startup, model lookup outside or inside ASAR, and clean shutdown.
 7. Keep transcripts in an editable composer. Never route a transcript straight to an executor. The user must press Send; execution must still pass the same command policy as typed input.
 8. Record raw results, limitations, and a decision in this document. If the target OS, language, or licensing is unresolved, leave Step 1.4 open.
@@ -74,7 +74,10 @@ For negative audio controls, include at least ten seconds each of room noise and
 | Available benchmark environment | WSL2 x86_64; 11th Gen Intel Core i5-1135G7 (4 cores / 8 threads), 7.6 GiB available memory, Node.js 24.15.0. This is the development host, not a declared release target; WSL microphone and Windows Electron packaging are unverified. |
 | Selected benchmark targets | Windows x64 and Linux x64, selected by the user on 2026-10-29 |
 | Languages | English first, selected by the user on 2026-10-29; Hindi is out of the first benchmark scope |
-| Consented speech set | Not recorded |
+| Consented speech set | Not recorded; recognition accuracy and Ve-command extraction are unmeasured |
+| WSL2 sherpa negative-control smoke | `sherpa-onnx-node` 2.0.1, one CPU thread; generated 3-second PCM silence; one warmup + three measured passes; no transcript in 3/3 runs |
+| WSL2 measured results | Model init 730.7 ms; required model files 45,202,074 bytes; installed runtime packages 33,260,765 bytes; per-pass latency 96.9–107.5 ms; p50 real-time factor 0.033; process RSS 49.4 MB at startup, 144.3 MB after model load, 146.0 MB after inference |
+| Interpretation | Smoke test only: confirms model/package load and silence control. It says nothing about speech WER or Ve command accuracy. WSL2 is not native Linux or Windows evidence. |
 | Native packaging checks | Windows x64: pending. Linux x64: pending. WSL2 is not accepted as native Linux packaging evidence. |
 | Decision | Pending; no voice package or model added |
 
