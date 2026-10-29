@@ -1,6 +1,6 @@
 # Local voice runtime evaluation
 
-**Status:** English is the user-selected first benchmark language (2026-10-29). Research shortlist only; no recognizer has been selected. Live measurements on Ve's target computer and consented speech are required before Step 1.4 can be marked complete.
+**Status:** English is the user-selected first benchmark language; Windows x64 and Linux x64 are the user-selected benchmark targets (2026-10-29). Research shortlist only; no recognizer has been selected. Live measurements on Ve's target computer and consented speech are required before Step 1.4 can be marked complete.
 
 ## Recommendation before measurement
 
@@ -21,7 +21,7 @@ Published model sizes and benchmark scores are source-reported, not Ve measureme
 
 ## Benchmark procedure
 
-1. Record the target machine and release platform: OS/version, CPU model/core count, RAM, architecture, microphone, and Electron version. Do not treat WSL results as Windows desktop packaging results.
+1. Record each target machine and platform: OS/version, CPU model/core count, RAM, architecture, microphone, and Electron version. Run Windows x64 and native Linux x64 checks separately. WSL2 is useful as a development smoke environment, but does not count as native Linux or Windows packaging evidence.
 2. Use English for this benchmark. Include the user's ordinary spoken English and product/app names; score any code-switched speech separately as exploratory until support for those languages is specified.
 3. Prepare a fixed, consented set of short Ve commands covering app/site launch, media requests, file lookup/opening, and message drafting. Include similar-sounding pairs, product/app names, silence, and ordinary room noise. Store audio only in a temporary local benchmark directory; never commit recordings or transcripts.
 4. Run each candidate on identical clips and settings. Run each model once to warm it, then make three measured passes. Record model/runtime versions, checksums, thread count, and whether decode is streaming or full-utterance.
@@ -72,9 +72,10 @@ For negative audio controls, include at least ten seconds each of room noise and
 | Field | Result |
 |---|---|
 | Available benchmark environment | WSL2 x86_64; 11th Gen Intel Core i5-1135G7 (4 cores / 8 threads), 7.6 GiB available memory, Node.js 24.15.0. This is the development host, not a declared release target; WSL microphone and Windows Electron packaging are unverified. |
+| Selected benchmark targets | Windows x64 and Linux x64, selected by the user on 2026-10-29 |
 | Languages | English first, selected by the user on 2026-10-29; Hindi is out of the first benchmark scope |
 | Consented speech set | Not recorded |
-| Native packaging checks | Not run |
+| Native packaging checks | Windows x64: pending. Linux x64: pending. WSL2 is not accepted as native Linux packaging evidence. |
 | Decision | Pending; no voice package or model added |
 
 ## Official sources
