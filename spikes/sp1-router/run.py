@@ -40,7 +40,7 @@ def load_tests():
 
 def load_dev():
     rows = []
-    for line in (ROOT / "data" / "dev.txt").read_text().splitlines():
+    for line in (ROOT / "data" / "val.txt").read_text().splitlines():
         lab, text = line.split("|", 1)
         rows.append((text, lab.split("+")))
     return rows

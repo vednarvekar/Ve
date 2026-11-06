@@ -1,0 +1,129 @@
+A1|could you start up Spotify for me
+A1|I'm done with Teams, close it
+A2|play something by Arijit Singh
+A2|I want to listen to my workout mix on spotify
+A3|pause it for a second
+A3|skip ahead to the next track
+A4|has Mark Rober posted anything new on youtube
+A4|open the newest Kurzgesagt video
+A5|search the web for how to tie a tie
+A5|look for guitar lessons on youtube
+A6|take me to the Reddit homepage
+A6|open flipkart.com in my browser
+M1|send Priya a whatsapp saying I'll call tonight
+M1|message my mom on whatsapp that I reached
+M2|can you whatsapp the sales sheet to Sam
+M2|send the photos from yesterday to Anita on whatsapp
+M3|read me what Karan wrote on whatsapp
+M3|do I have unread whatsapp messages
+M4|tell the design channel on teams that the build is ready
+M4|post an update in my teams chat, standup is moved
+E1|what's urgent in my inbox right now
+E1|do I have any important unread emails
+E2|give me a quick summary of Priya's last email
+E2|what's the main point of this email chain
+E3|find the email where Sam mentioned the contract
+E3|show me everything Karan sent me about the launch
+E4|which emails am I yet to reply to
+E4|show me mails that are still waiting on my answer
+E5|draft a response to Neha telling her Thursday works
+E5|help me write a reply to the vendor, but I'll send it myself
+E6|move all newsletter emails out of my inbox
+E6|archive everything from LinkedIn
+E7|email Dev to say the invoice is paid
+E7|send a note to my manager about the delay
+Q1|what time does the sun go down tonight
+Q1|what's the moon phase right now
+Q2|is it going to be warm this weekend
+Q2|what's the weather like in Paris
+Q3|how many people live in Berlin
+Q3|who discovered penicillin
+Q4|what is 17 times 23
+Q4|convert 100 dollars worth of rupees at 83 per dollar
+Q5|what time is it in Sydney right now
+Q5|what is the date 45 days from today
+F1|I need to find the proposal I worked on last week
+F1|search my laptop for the tax document
+F2|what have I downloaded in the last hour
+F2|list the files I worked on today
+F3|open the project plan
+F3|can you open my cv
+F4|move my screenshots into the Photos folder
+F4|copy the contract to my backup folder
+F5|email the budget sheet to Priya
+F5|send this pdf to Sam by email
+F6|share the Taxes folder with my accountant
+F6|get me a shareable link for the proposal
+C1|what meetings do I have today
+C1|am I free on Thursday afternoon
+C2|find a time when Neha and I are both free tomorrow
+C2|when can Sam and I meet this week
+C3|help me prepare for my next meeting
+C3|what documents do I need for my 4pm call
+C4|add a doctor's appointment on Saturday at 10am
+C4|put the product review on my calendar for Tuesday at 3pm
+C5|block two hours tomorrow for writing
+C5|reserve my Friday morning for focus work
+C6|schedule a 30 minute call with Priya on Wednesday
+C6|set up a team sync for Monday at 11 and send invites
+C7|move my 2pm meeting to the next day
+C7|cancel the meeting with Karan on Friday
+C8|accept the invite for tomorrow's review
+C8|decline the Thursday sync
+R1|remind me to submit the report at 5pm
+R1|remind me to call the bank tomorrow morning
+R2|set a timer for twenty minutes
+R2|wake me up at 6:30
+W1|give me my morning briefing
+W1|what's on for today and anything urgent in my mail
+W2|add the meeting from this email to my calendar
+W2|create a calendar event from Priya's email
+W3|save the attachments from this email into the Finance folder
+W3|store the invoices attached to this mail in Receipts
+W4|forward the file attached to this email to the team chat
+W4|send the attachment from Karan's email to Sam on whatsapp
+W5|send this week's report to my manager
+W5|find the latest weekly report and email it to Dev
+W6|start focus mode for two hours
+W6|play my focus playlist and block notifications for an hour
+S1|turn down the brightness a little
+S1|raise the volume
+S2|lock my laptop
+S2|lock the screen please
+S3|turn bluetooth off
+S3|switch on the wifi
+S4|do not disturb for the next hour
+S4|silence all my notifications
+S5|take a screenshot
+S5|grab a picture of my screen
+OUT|delete all my emails permanently
+OUT|order me a pizza
+OUT|post this on twitter
+OUT|call Priya for me
+OUT|transfer 5000 rupees to Sam
+OUT|message Dev on telegram
+OUT|change my account password
+OUT|book me a hotel in Goa
+OUT|write a python script for me
+OUT|reply to this mail in french
+OUT|post my photo on instagram
+OUT|schedule a slack call with the team
+OUT|buy the shoes in my cart
+OUT|submit my tax return online
+A2+S4|play some jazz and turn on do not disturb
+F1+F5|find the invoice and email it to Karan
+C1+M1|check my calendar and tell Priya on whatsapp when I'm free
+E6+E1|archive the newsletters and then show me the urgent ones
+S5+E7|take a screenshot and email it to Sam
+S4+S1+A2|mute notifications, dim the screen and play my favorite playlist
+A1+A5|open chrome and search for cheap flights
+W2+C6|turn this email into a meeting and invite Neha
+E3+E2|find Priya's email about the budget and summarize it
+S1+A2|lower the brightness and play Coldplay
+R1+C4|remind me about the review at 3 and add it to my calendar
+F1+M2|find the contract and send it to Dev on whatsapp
+S4+A2|silence notifications and play lo-fi
+E1+C1|show urgent emails and tell me what's on my calendar
+A3+S1|pause the music and turn the screen brightness down
+F3+F5|open the proposal and email it to Karan
+C4+R1|add dentist to my calendar for Monday and remind me an hour before
