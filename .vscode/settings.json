@@ -1,0 +1,3 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/spikes/sp1-router/.venv/bin/python"
+}

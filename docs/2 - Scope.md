@@ -135,7 +135,7 @@ These wait for later versions. Saying no now keeps V1 small enough to finish.
 - 49 tasks is large for V1; mark which are must-haves for launch.
 - Support both Google and Microsoft suites in V1, or one first?
 - Add Slack, since many startups use it?
-- Keep voice input out of V1?
+- ~~Keep voice input out of V1?~~ Decided: voice is out of V1 and comes after V1 is built.
 - Keep V1 English only?
 
 Next doc: **03 Requirements.** It defines what each task must do, plus memory, speed, privacy and safety targets.

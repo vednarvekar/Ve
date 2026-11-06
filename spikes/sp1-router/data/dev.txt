@@ -1,0 +1,122 @@
+A1|bring up Excel
+A1|kill Notepad
+A1|get Word running
+A2|put on some Coldplay
+A2|I'm in the mood for lo-fi beats, play it on spotify
+A3|hit pause
+A3|go back one song
+A4|what's Veritasium's most recent upload
+A4|latest Fireship video please
+A5|look up yoga videos on youtube
+A5|find me best phones reviews online
+A6|load Netflix in my browser
+A6|navigate to github.com
+M1|ping Priya on whatsapp, reached home
+M1|tell Karan on whatsapp I'll be late
+M2|drop the contract into my whatsapp chat with Neha
+M2|whatsapp the photos to Anita
+M3|did anyone text me on whatsapp
+M3|check my whatsapp inbox
+M4|let the teams group know the meeting is cancelled
+M4|drop a note in teams channel saying thanks a lot
+E1|is there anything pressing in my mail
+E1|urgent mail?
+E2|what's the email from Sam about
+E2|short summary of that long thread
+E3|dig up the mail about the audit
+E3|anything from Karan about travel plans last week
+E4|emails i haven't answered
+E4|who's waiting for my response over email
+E5|prepare a reply to Dev, saying call me when free
+E5|write back to Neha but don't send
+E6|clean out the promotional mail
+E6|mark everything in my inbox as read
+E7|mail Anita that the meeting is cancelled
+E7|send an email to my manager with the proposal attached
+Q1|when will the sun rise tomorrow
+Q1|is tonight a full moon
+Q2|how hot is it outside
+Q2|should I carry a jacket tomorrow
+Q3|how far is the moon
+Q3|who painted the mona lisa
+Q4|what's 35 percent of 800
+Q4|convert 10 kg to pounds
+Q5|what's the time in Tokyo
+Q5|what date is it on the 30th of next month
+F1|where did I save the vendor payments sheet
+F1|find the PDF about the audit
+F2|what files did I open lately
+F2|show everything I downloaded this morning
+F3|open the sales sheet
+F3|bring up my resume document
+F4|put the receipts into the Taxes folder
+F4|rename the proposal to final
+F5|attach the proposal and send it to Karan
+F5|share this document with Priya by mail
+F6|give Sam a link to the Backup folder
+F6|share the Q3 deck with my manager
+C1|do I have meetings on Friday
+C1|what does tomorrow look like on my calendar
+C2|find a slot for Anita and me this week
+C2|when are Dev and I both available
+C3|what should I look at before my 2pm
+C3|prep for my next meeting
+C4|put lunch with Priya on my calendar for Thursday at noon
+C4|add a dentist appointment on Monday 4 pm
+C5|keep an hour free tomorrow for deep work
+C5|reserve two hours Wednesday morning for me
+C6|get a meeting with Rahul on Tuesday 11:30
+C6|set up a 30 minutes call with the team and invite them
+C7|push my 4 pm to Friday
+C7|cancel tomorrow's standup
+C8|say yes to Sam's invite
+C8|reject the Wednesday review
+R1|remind me to buy milk tomorrow
+R1|ping me at 6 pm about the audit
+R2|ten minute timer please
+R2|wake me at 7
+W1|how does my day look, anything urgent
+W1|brief me for the day
+W2|put this email's meeting on my calendar
+W2|make a calendar event out of Dev's mail
+W3|save the attachments from this mail to Finance
+W3|put the invoice attachments into the Receipts folder
+W4|pass the attached file from Karan's email to the team chat
+W4|send this email's attachment to Neha on whatsapp
+W5|email this week's report to my manager
+W5|find the newest report and mail it to Sam
+W6|focus mode for an hour
+W6|i need to concentrate, music and silence everything for two hours
+S1|make the screen brighter
+S1|turn it down a bit
+S2|lock the pc
+S2|lock my screen now
+S3|bluetooth on
+S3|disconnect from wifi
+S4|no pings for an hour
+S4|turn on do not disturb
+S5|screenshot please
+S5|capture what's on my screen
+OUT|delete every mail from last year
+OUT|sell my old laptop on olx
+OUT|message Dev on snapchat
+OUT|buy me a flight ticket to Dubai
+OUT|ring Sam
+OUT|set up my bank account
+OUT|reply to this email in tamil
+OUT|what is the meaning of life, write an essay
+A2+S4|play Kesariya and mute notifications
+F1+F5|find the proposal and mail it to Priya
+C1+M1|look at my calendar and tell Dev on whatsapp when I'm free
+E6+E1|archive newsletters then show urgent mail
+S5+E7|take a screenshot and email it to Karan
+S4+S1+A2|do not disturb, dim the screen and play lo-fi beats
+A1+A5|launch Chrome then search python tutorials
+W2+C6|turn this email into a meeting and invite Sam
+E3+E2|find mail about the audit and summarize it
+S1+A2|turn down brightness and play Coldplay
+R1+C4|remind me about the audit at 5 and add it to my calendar Friday
+Q2+M1|check the weather and whatsapp Neha about it
+F1+M2|find the sales sheet and send it to Karan on whatsapp
+S4+A2|silence notifications and put on my workout mix
+E1+C1|show urgent emails and what's on my calendar
