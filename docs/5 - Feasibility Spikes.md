@@ -14,7 +14,7 @@ All spikes run on the 8GB test laptop from 04, with Chrome and a chat app open, 
 
 | ID | Risk being tested | Pass if | If it fails |
 |---|---|---|---|
-| SP1 | Can a tiny router pick the right task? | 95%+ correct on T01–T90, under 50ms, under 150MB | Add more training data, or use a slightly bigger encoder |
+| SP1 | Can a tiny router pick the right task? | 85%+ correct on single-task requests, scored on a held-out test set never used for training or tuning. Chained requests are reported separately. Under 50ms, under 150MB | Add more training data, or use a slightly bigger encoder |
 | SP2 | Can a tiny model pull out names, files and times from casual wording? | 95%+ correct on T01–T64 | Add rules for common patterns, or a bigger extractor |
 | SP3 | Can a 1–3B local model plan chained tasks on a CPU? | Correct plans for T75–T82, under 5 seconds, under 2GB | Cover chains with fixed templates; send rare cases to a “can't do that yet” prompt |
 | SP4 | Can adapters swap fast on a CPU? | Swap under 200ms, memory stays flat | Keep a few separate small models instead |
