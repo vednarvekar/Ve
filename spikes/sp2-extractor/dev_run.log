@@ -1,0 +1,81 @@
+/home/vedvn/ve/spikes/sp2-extractor/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+/home/vedvn/ve/spikes/sp2-extractor/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py:189: UserWarning: The `resume_download` argument is deprecated and ignored in `snapshot_download`. Downloads always resume whenever possible.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files: 100%|██████████| 4/4 [00:00<00:00, 712.68it/s]
+val gliner_small-v2.1 a 0.3        TP  61 FP  13 FN  31  precision 82% recall 66% F1 73%   every span right in 26/56 sentences
+val gliner_small-v2.1 a 0.5        TP  58 FP   7 FN  34  precision 89% recall 63% F1 74%   every span right in 27/56 sentences
+val gliner_small-v2.1 a 0.7        TP  55 FP   7 FN  37  precision 89% recall 60% F1 71%   every span right in 25/56 sentences
+val gliner_small-v2.1 b 0.3        TP  41 FP  18 FN  51  precision 69% recall 45% F1 54%   every span right in 20/56 sentences
+val gliner_small-v2.1 b 0.5        TP  38 FP  14 FN  54  precision 73% recall 41% F1 53%   every span right in 19/56 sentences
+val gliner_small-v2.1 b 0.7        TP  38 FP  13 FN  54  precision 75% recall 41% F1 53%   every span right in 19/56 sentences
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 62.89it/s]
+val gliner_medium-v2.1 a 0.3       TP  60 FP  17 FN  32  precision 78% recall 65% F1 71%   every span right in 26/56 sentences
+val gliner_medium-v2.1 a 0.5       TP  51 FP  10 FN  41  precision 84% recall 55% F1 67%   every span right in 23/56 sentences
+val gliner_medium-v2.1 a 0.7       TP  44 FP   5 FN  48  precision 90% recall 48% F1 62%   every span right in 22/56 sentences
+val gliner_medium-v2.1 b 0.3       TP  63 FP  16 FN  29  precision 80% recall 68% F1 74%   every span right in 26/56 sentences
+val gliner_medium-v2.1 b 0.5       TP  56 FP  10 FN  36  precision 85% recall 61% F1 71%   every span right in 23/56 sentences
+val gliner_medium-v2.1 b 0.7       TP  52 FP   6 FN  40  precision 90% recall 57% F1 69%   every span right in 22/56 sentences
+
+chosen on val: urchade/gliner_small-v2.1 labels=a threshold=0.5
+
+val (rules + GLiNER)               TP  58 FP   7 FN  34  precision 89% recall 63% F1 74%   every span right in 27/56 sentences
+val (GLiNER only)                  TP  26 FP   6 FN  66  precision 81% recall 28% F1 42%   every span right in 7/56 sentences
+  V03 'play Coldplay on spotify'
+      missed [('app', 'spotify')]  extra [('website', 'spotify')]
+  V04 'put on some jazz'
+      missed [('media', 'jazz')]  extra []
+  V05 "what's Veritasium posted lately on youtube"
+      missed [('app', 'youtube')]  extra [('website', 'youtube')]
+  V06 'google cheap laptops under 50k'
+      missed [('query', 'cheap laptops under 50k')]  extra [('website', 'google')]
+  V08 'ping Priya on whatsapp running late'
+      missed [('message', 'running late')]  extra []
+  V09 'whatsapp the contract to Neha'
+      missed [('file', 'contract')]  extra [('app', 'whatsapp')]
+  V10 'tell the design channel the build is ready'
+      missed [('contact', 'design channel'), ('message', 'build is ready')]  extra []
+  V11 'find the mail from Sam about the audit'
+      missed [('query', 'audit')]  extra []
+  V13 'reply to Dev and say thursday works'
+      missed [('message', 'thursday works')]  extra [('date_time', 'thursday')]
+  V15 'mail Anita the meeting is cancelled'
+      missed [('message', 'meeting is cancelled')]  extra []
+  V20 'where did i save the vendor payments sheet'
+      missed [('file', 'vendor payments sheet')]  extra []
+  V22 'open the sales sheet'
+      missed [('file', 'sales sheet')]  extra []
+  V23 'move the receipts into Taxes'
+      missed [('file', 'receipts'), ('folder', 'taxes')]  extra []
+  V24 'copy proposal.docx to Backup'
+      missed [('file', 'proposal.docx'), ('folder', 'backup')]  extra [('file', 'docx')]
+  V25 'share Projects with my accountant'
+      missed [('contact', 'accountant'), ('folder', 'projects')]  extra []
+  V29 'put lunch with Priya on my calendar for thursday at noon'
+      missed [('event', 'lunch')]  extra []
+  V33 "cancel tomorrow's standup"
+      missed [('event', 'standup')]  extra []
+  V34 'reject the wednesday review'
+      missed [('event', 'review')]  extra []
+  V36 'ping me at 6 pm about the audit'
+      missed [('event', 'audit')]  extra []
+  V39 "save the attachments from Karan's mail to Finance"
+      missed [('folder', 'finance')]  extra []
+  V41 "email this week's report to my manager"
+      missed [('contact', 'manager'), ('file', 'report')]  extra []
+  V44 'turn bluetooth on'
+      missed [('setting', 'bluetooth')]  extra []
+  V46 'turn on do not disturb'
+      missed [('setting', 'do not disturb')]  extra []
+  V47 'disconnect from wifi'
+      missed [('setting', 'wifi')]  extra []
+  V48 'turn the brightness down to 30 percent'
+      missed [('setting', 'brightness')]  extra []
+  V49 'remind me at 5:15pm to call dad'
+      missed [('contact', 'dad')]  extra []
+  V52 'mail budget.xlsx to Sam'
+      missed [('file', 'budget.xlsx')]  extra []
+  V53 'find the offer letter i edited last week'
+      missed [('file', 'offer letter')]  extra []
+  V56 'tell mom on whatsapp reached home'
+      missed [('message', 'reached home')]  extra [('place', 'home')]

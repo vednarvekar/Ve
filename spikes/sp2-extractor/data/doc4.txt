@@ -1,0 +1,64 @@
+T01|Open [app|Spotify].
+T02|Play [media|Arijit Singh] on [app|Spotify].
+T03|Pause the music.
+T04|Open [media|MKBHD]'s latest video on [app|YouTube].
+T05|Search [app|YouTube] for [query|pasta recipes].
+T06|Open [website|Amazon].
+T07|Tell [contact|Ved] on [app|WhatsApp] [message|I'm on my way].
+T08|Send [file|report.pdf] to [contact|Ved] on [app|WhatsApp].
+T09|Any new [app|WhatsApp] messages?
+T10|Tell the [contact|team channel] [message|standup moves to 11].
+T11|Any urgent emails?
+T12|Summarize the latest email from [contact|Rahul].
+T13|Find emails about [query|the invoice] from [date_time|last month].
+T14|What haven't I replied to?
+T15|Draft a reply to [contact|Rahul] saying [message|Friday works].
+T16|Archive [date_time|today]'s newsletters.
+T17|Email [contact|Rahul] that [message|the report is ready].
+T18|When is the next full moon?
+T19|Will it rain [date_time|tomorrow]?
+T20|What's the capital of [place|Australia]?
+T21|What's [number|18%] of [number|2,450]?
+T22|What time is it in [place|New York]?
+T23|Find [file|the budget sheet] from [date_time|last week].
+T24|What did I download [date_time|today]?
+T25|Open [file|my resume].
+T26|Move [file|these PDFs] to the [folder|Invoices] folder.
+T27|Email [file|budget.xlsx] to [contact|Rahul].
+T28|Share the [folder|Project] folder with [contact|Priya].
+T29|What's on my calendar [date_time|today]?
+T30|When are [contact|Rahul] and I both free [date_time|this week]?
+T31|Show me what I need for my [date_time|3pm].
+T32|Add [event|dentist] on [date_time|Friday at 4pm].
+T33|Block [duration|two hours] [date_time|tomorrow morning].
+T34|Set up [duration|30 minutes] with [contact|Rahul] on [date_time|Thursday].
+T35|Move my [date_time|3pm] to [date_time|tomorrow], same time.
+T36|Decline the [date_time|Friday] [event|review].
+T37|Remind me to call [contact|mom] at [date_time|6pm].
+T38|Set a [duration|10-minute] timer.
+T39|Give me my morning brief.
+T40|Add this meeting request to my calendar.
+T41|Save the invoices from [contact|Rahul]'s email to the [folder|Finance] folder.
+T42|Send the attachment from [contact|Rahul]'s email to [contact|the project chat].
+T43|Send [date_time|this week]'s [file|report] to [contact|my manager].
+T44|Focus mode for [duration|an hour].
+T45|Turn the [setting|volume] down.
+T46|Lock my laptop.
+T47|Turn on [setting|Bluetooth].
+T48|[setting|Don't disturb] me for [duration|an hour].
+T49|Take a screenshot.
+T50|put on some [media|arijit]
+T51|music off
+T52|yo send [contact|ved] [file|the pdf] i just downloaded on [app|whatsapp]
+T53|anything important in my inbox?
+T54|tldr [contact|rahul]'s mail
+T55|full moon when
+T56|gonna rain [date_time|tmrw]?
+T57|louder
+T58|wheres [file|that budget thing]
+T59|remind me abt [contact|mom] call at [date_time|6]
+T60|am i free [date_time|thurs afternoon]
+T61|open that new [media|mkbhd] vid
+T62|[setting|wifi] off
+T63|shut [setting|notifications] up for [duration|1 hr]
+T64|whats [number|15 percent] tip on [number|1200]

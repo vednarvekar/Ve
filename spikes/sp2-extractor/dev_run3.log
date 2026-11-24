@@ -1,0 +1,47 @@
+/home/vedvn/ve/spikes/sp2-extractor/.venv/lib/python3.12/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+/home/vedvn/ve/spikes/sp2-extractor/.venv/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py:189: UserWarning: The `resume_download` argument is deprecated and ignored in `snapshot_download`. Downloads always resume whenever possible.
+  warnings.warn(
+Fetching 4 files:   0%|          | 0/4 [00:00<?, ?it/s]Fetching 4 files: 100%|██████████| 4/4 [00:00<00:00, 758.33it/s]
+val gliner_small-v2.1 a 0.3        TP  80 FP   3 FN  13  precision 96% recall 86% F1 91%   every span right in 44/56 sentences
+val gliner_small-v2.1 a 0.5        TP  78 FP   2 FN  15  precision 98% recall 84% F1 90%   every span right in 43/56 sentences
+val gliner_small-v2.1 a 0.7        TP  77 FP   2 FN  16  precision 97% recall 83% F1 90%   every span right in 42/56 sentences
+val gliner_small-v2.1 b 0.3        TP  65 FP  15 FN  28  precision 81% recall 70% F1 75%   every span right in 33/56 sentences
+val gliner_small-v2.1 b 0.5        TP  64 FP  15 FN  29  precision 81% recall 69% F1 74%   every span right in 33/56 sentences
+val gliner_small-v2.1 b 0.7        TP  64 FP  15 FN  29  precision 81% recall 69% F1 74%   every span right in 33/56 sentences
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Fetching 5 files: 100%|██████████| 5/5 [00:00<00:00, 887.95it/s]
+val gliner_medium-v2.1 a 0.3       TP  75 FP   9 FN  18  precision 89% recall 81% F1 85%   every span right in 38/56 sentences
+val gliner_medium-v2.1 a 0.5       TP  69 FP   8 FN  24  precision 90% recall 74% F1 81%   every span right in 35/56 sentences
+val gliner_medium-v2.1 a 0.7       TP  63 FP   6 FN  30  precision 91% recall 68% F1 78%   every span right in 32/56 sentences
+val gliner_medium-v2.1 b 0.3       TP  79 FP   5 FN  14  precision 94% recall 85% F1 89%   every span right in 42/56 sentences
+val gliner_medium-v2.1 b 0.5       TP  78 FP   4 FN  15  precision 95% recall 84% F1 89%   every span right in 42/56 sentences
+val gliner_medium-v2.1 b 0.7       TP  75 FP   2 FN  18  precision 97% recall 81% F1 88%   every span right in 40/56 sentences
+
+chosen on val: urchade/gliner_small-v2.1 labels=a threshold=0.3
+
+val (rules + GLiNER)               TP  80 FP   3 FN  13  precision 96% recall 86% F1 91%   every span right in 44/56 sentences
+val (GLiNER only)                  TP  30 FP  10 FN  63  precision 75% recall 32% F1 45%   every span right in 7/56 sentences
+  V04 'put on some jazz'
+      missed [('media', 'jazz')]  extra []
+  V06 'google cheap laptops under 50k'
+      missed [('query', 'cheap laptops under 50k')]  extra [('website', 'google')]
+  V10 'tell the design channel the build is ready'
+      missed [('contact', 'design channel'), ('message', 'build is ready')]  extra []
+  V11 'find the mail from Sam about the audit'
+      missed [('query', 'audit')]  extra []
+  V13 'reply to Dev and say thursday works'
+      missed []  extra [('date_time', 'thursday')]
+  V15 'mail Anita the meeting is cancelled'
+      missed [('message', 'meeting is cancelled')]  extra [('event', 'meeting')]
+  V25 'share Projects with my accountant'
+      missed [('contact', 'accountant'), ('folder', 'projects')]  extra []
+  V29 'put lunch with Priya on my calendar for thursday at noon'
+      missed [('event', 'lunch')]  extra []
+  V33 "cancel tomorrow's standup"
+      missed [('event', 'standup')]  extra []
+  V34 'reject the wednesday review'
+      missed [('event', 'review')]  extra []
+  V36 'ping me at 6 pm about the audit'
+      missed [('event', 'audit')]  extra []
+  V41 "email this week's report to my manager"
+      missed [('file', 'report')]  extra []
